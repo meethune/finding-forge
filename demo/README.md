@@ -11,13 +11,18 @@ Fictional engagement against `portal.acme-demo.com` with three findings:
 The MCP server must be registered (user-scoped so it works from any directory):
 
 ```bash
+# IBM Bob
+bob mcp add --scope user finding-forge \
+  uv run --project /path/to/finding-forge finding-forge-mcp
+
+# Claude Code
 claude mcp add --scope user finding-forge -- \
   uv run --project /path/to/finding-forge finding-forge-mcp
 ```
 
 ## Demo Script
 
-Open Claude Code (or any MCP client) from **any directory** and walk through these steps. Each quoted block is something you say to the AI.
+Open IBM Bob, Claude Code, or any MCP client from **any directory** and walk through these steps. Each quoted block is something you say to the AI.
 
 ---
 

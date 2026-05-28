@@ -13,22 +13,49 @@ An MCP server and CLI that captures evidence from penetration testing sessions a
 ```bash
 # Install
 uv sync
+```
 
-# Register globally — available from any directory
+Register the server globally so it's available from any directory. Use whichever MCP client your team runs:
+
+**[IBM Bob](https://bob.ibm.com):**
+```bash
+bob mcp add --scope user finding-forge \
+  uv run --project /path/to/finding-forge finding-forge-mcp
+```
+
+**Claude Code:**
+```bash
 claude mcp add --scope user finding-forge -- \
   uv run --project /path/to/finding-forge finding-forge-mcp
+```
 
-# Or project-scoped only (the .mcp.json auto-configures when you're in this directory)
+**Other MCP clients:** Add to your `.mcp.json` or equivalent config:
+
+```json
+{
+  "mcpServers": {
+    "finding-forge": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--project", "/path/to/finding-forge", "finding-forge-mcp"]
+    }
+  }
+}
 ```
 
 Once registered, the AI client has access to tools for Burp extraction, evidence capture, template matching, and finding export — plus a `draft_finding` prompt for AI-assisted drafting.
 
 ### Custom templates directory
 
-By default the server uses the bundled `templates/findings/` directory. To point at your own templates:
+By default the server uses the bundled `templates/findings/` directory. To point at your own templates, set the `FINDING_FORGE_TEMPLATES_DIR` environment variable when registering:
 
 ```bash
-# Via environment variable
+# IBM Bob
+bob mcp add --scope user finding-forge \
+  FINDING_FORGE_TEMPLATES_DIR=/path/to/my/templates \
+  uv run --project /path/to/finding-forge finding-forge-mcp
+
+# Claude Code
 claude mcp add --scope user finding-forge \
   --env FINDING_FORGE_TEMPLATES_DIR=/path/to/my/templates -- \
   uv run --project /path/to/finding-forge finding-forge-mcp
