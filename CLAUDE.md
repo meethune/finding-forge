@@ -28,7 +28,9 @@ templates/library.py
 
 3. **Template Library** (`finding_forge.templates`) — Loads, lists, and matches finding templates from `templates/findings/` Markdown files with YAML frontmatter.
 
-4. **Export** (`finding_forge.export`) — Formats drafted findings for import into reporting platforms (CSV, JSON, Markdown).
+4. **Export** (`finding_forge.export`) — Formats drafted findings for import into reporting platforms (CSV, JSON, Markdown, Cervantes CSV).
+
+> **Note on Cervantes export:** Cervantes' CSV import functionality is unreliable — parsing can fail silently or reject valid rows depending on version and database state. The `cervantes` export format is provided as a convenience but results may vary. Always verify imported findings in Cervantes after upload.
 
 5. **MCP Server** (`finding_forge.server`) — Exposes all of the above as MCP tools, resources, and prompts. The `draft_finding` prompt replaces direct AI integration — the client's model executes the drafting.
 
@@ -39,7 +41,7 @@ templates/library.py
 - `list_finding_templates` — List all available templates
 - `get_finding_template` — Get a specific template by name
 - `match_finding_templates` — Find templates matching a query
-- `export_finding` — Format a finding as JSON/CSV/Markdown
+- `export_finding` — Format a finding as JSON/CSV/Markdown/Cervantes CSV
 
 ## MCP Resources
 

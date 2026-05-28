@@ -53,7 +53,7 @@ uv run finding-forge export --finding finding.json --format markdown
 | `list_finding_templates` | List all available finding templates |
 | `get_finding_template` | Get a specific template by name |
 | `match_finding_templates` | Find templates matching a query |
-| `export_finding` | Format a finding as JSON/CSV/Markdown |
+| `export_finding` | Format a finding as JSON/CSV/Markdown/Cervantes CSV |
 
 ## Development
 
@@ -78,3 +78,14 @@ templates/library.py
 ```
 
 See [CLAUDE.md](CLAUDE.md) for detailed architecture and conventions.
+
+## Export Formats
+
+| Format | Description |
+|--------|-------------|
+| `json` | Full finding as JSON |
+| `csv` | Flat key-value dict as JSON (for generic CSV pipelines) |
+| `markdown` | Formatted Markdown for Word/Google Docs |
+| `cervantes` | Semicolon-delimited CSV for Cervantes bulk import |
+
+> **Cervantes caveat:** Cervantes' CSV import is unreliable — parsing can fail silently or reject valid rows depending on version and database state. The `cervantes` format is provided as a convenience but YMMV. Always verify imported findings in Cervantes after upload.
