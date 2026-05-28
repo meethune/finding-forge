@@ -27,6 +27,7 @@ def templates_dir(tmp_path: Path) -> Path:
           - sqli
           - injection
           - database
+        finding_type: Web
         severity:
           rating: High
           cvss_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
@@ -57,6 +58,10 @@ def templates_dir(tmp_path: Path) -> Path:
         ## Detection
 
         Monitor database logs.
+
+        ## Guidance
+
+        Use when error-based or blind SQLi is confirmed.
         """)
     )
 
@@ -71,6 +76,7 @@ def templates_dir(tmp_path: Path) -> Path:
           - xss
           - reflected
           - injection
+        finding_type: Cloud
         severity:
           rating: Medium
           cvss_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
@@ -128,6 +134,18 @@ class TestLoadTemplate:
     def test_name_from_filename_stem(self, templates_dir: Path) -> None:
         tmpl = load_template(templates_dir / "xss-reflected.md")
         assert tmpl.name == "xss-reflected"
+
+    def test_reads_finding_type(self, templates_dir: Path) -> None:
+        tmpl = load_template(templates_dir / "sqli.md")
+        assert tmpl.finding_type == "Web"
+
+    def test_reads_guidance_section(self, templates_dir: Path) -> None:
+        tmpl = load_template(templates_dir / "sqli.md")
+        assert "error-based or blind SQLi" in tmpl.guidance
+
+    def test_missing_finding_type_defaults_empty(self, templates_dir: Path) -> None:
+        tmpl = load_template(templates_dir / "xss-reflected.md")
+        assert tmpl.finding_type == "Cloud"
 
     def test_missing_file_raises(self, templates_dir: Path) -> None:
         with pytest.raises(FileNotFoundError):
@@ -197,3 +215,42 @@ class TestMatchTemplates:
     def test_case_insensitive(self, templates_dir: Path) -> None:
         results = match_templates(templates_dir, "SQL INJECTION")
         assert len(results) >= 1
+
+    def test_matches_by_finding_type(self, templates_dir: Path) -> None:
+        results = match_templates(templates_dir, "web")
+        assert len(results) >= 1
+        assert results[0].name == "sqli"
+
+    def test_matches_cloud_type(self, templates_dir: Path) -> None:
+        results = match_templates(templates_dir, "cloud")
+        assert len(results) >= 1
+        assert results[0].name == "xss-reflected"
+
+
+_REAL_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates" / "findings"
+
+
+class TestBundledTemplates:
+    def test_all_templates_parse(self) -> None:
+        templates = list_templates(_REAL_TEMPLATES_DIR)
+        assert len(templates) == 78
+
+    def test_no_empty_titles(self) -> None:
+        templates = list_templates(_REAL_TEMPLATES_DIR)
+        for tmpl in templates:
+            assert tmpl.title, f"Template {tmpl.name} has empty title"
+
+    def test_no_empty_descriptions(self) -> None:
+        templates = list_templates(_REAL_TEMPLATES_DIR)
+        for tmpl in templates:
+            assert tmpl.description, f"Template {tmpl.name} has empty description"
+
+    def test_all_have_severity(self) -> None:
+        templates = list_templates(_REAL_TEMPLATES_DIR)
+        for tmpl in templates:
+            assert tmpl.severity.rating, f"Template {tmpl.name} missing severity"
+
+    def test_unique_names(self) -> None:
+        templates = list_templates(_REAL_TEMPLATES_DIR)
+        names = [t.name for t in templates]
+        assert len(names) == len(set(names))

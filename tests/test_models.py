@@ -237,6 +237,23 @@ class TestFindingTemplate:
         assert tmpl.detection == ""
         assert tmpl.cwe_ids == []
         assert tmpl.tags == []
+        assert tmpl.finding_type == ""
+        assert tmpl.guidance == ""
+
+    def test_finding_type_and_guidance(self) -> None:
+        tmpl = FindingTemplate(
+            name="a01-2025",
+            title="A01:2025 — Broken Access Control",
+            description="Access control failures.",
+            severity=FindingSeverity(rating="High"),
+            impact="Unauthorized access.",
+            mitigation="Deny by default.",
+            replication_steps="1. Test access controls.",
+            finding_type="Web",
+            guidance="Use for broad access control findings.",
+        )
+        assert tmpl.finding_type == "Web"
+        assert tmpl.guidance == "Use for broad access control findings."
 
     def test_serialization_roundtrip(self) -> None:
         tmpl = FindingTemplate(

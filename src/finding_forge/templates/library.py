@@ -68,6 +68,8 @@ def load_template(template_path: Path) -> FindingTemplate:
         detection=sections.get("detection", ""),
         cwe_ids=meta.get("cwe_ids", []),  # type: ignore[arg-type]
         tags=meta.get("tags", []),  # type: ignore[arg-type]
+        finding_type=str(meta.get("finding_type", "")),
+        guidance=sections.get("guidance", ""),
     )
 
 
@@ -101,7 +103,7 @@ def match_templates(
     for tmpl in all_templates:
         score = 0
         searchable = " ".join(
-            [tmpl.title.lower()]
+            [tmpl.title.lower(), tmpl.finding_type.lower()]
             + [t.lower() for t in tmpl.tags]
             + [c.lower() for c in tmpl.cwe_ids]
         )

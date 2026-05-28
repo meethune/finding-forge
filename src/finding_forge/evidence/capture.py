@@ -41,16 +41,12 @@ def add_evidence(
         screenshots=screenshots or [],
         operator_notes=operator_notes,
     )
-    return session.model_copy(
-        update={"evidence": [*session.evidence, new_evidence]}
-    )
+    return session.model_copy(update={"evidence": [*session.evidence, new_evidence]})
 
 
 def save_session(session: EngagementSession, output_path: Path) -> Path:
     """Serialize session to JSON file."""
-    output_path.write_text(
-        session.model_dump_json(indent=2), encoding="utf-8"
-    )
+    output_path.write_text(session.model_dump_json(indent=2), encoding="utf-8")
     return output_path
 
 

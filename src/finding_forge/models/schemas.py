@@ -80,3 +80,5 @@ class FindingTemplate(BaseModel):
     detection: str = ""
     cwe_ids: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
+    finding_type: str = ""
+    guidance: str = ""
