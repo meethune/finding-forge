@@ -34,7 +34,7 @@ Thumbs.db
 *.key
 *.pem
 
-# Evidence output (local only)
-evidence/
-findings/
+# Evidence output (local only, root-level)
+/evidence/
+/findings/
 *.burp
