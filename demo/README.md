@@ -73,22 +73,33 @@ Shows: The AI sees the screenshot (multimodal clients like Claude Code can read 
 
 ---
 
-### Step 7: Export
+### Step 7: Export to Cervantes
 
-> "Export that last finding as markdown"
+> "Export all three findings in cervantes format so I can import them"
 
-Shows: `export_finding` produces a clean Markdown document ready for import into any reporting platform.
+Shows: `export_finding` with `fmt=cervantes` produces semicolon-delimited CSV matching Cervantes' 20-column import format. The output can be imported directly via Cervantes' **Vuln > Import > CSV** workflow.
+
+**Cervantes import path:** In Cervantes, go to the project, select Import Vulnerabilities, choose CSV, and upload the file. Findings appear with severity, CVSS, description, remediation, and proof of concept already populated.
+
+---
+
+### Step 8: Export as markdown (alternative)
+
+> "Also export the SQLi finding as markdown for the executive summary"
+
+Shows: Same finding, different format — Markdown for Word/Google Docs, Cervantes CSV for the findings database.
 
 ---
 
 ## What the audience sees
 
 - **Three evidence types in one workflow** — Burp HTTP data, operator notes, and screenshots all feed into finding drafts
+- **Direct Cervantes integration** — export findings as Cervantes-compatible CSV for bulk import
 - **No AI provider lock-in** — the same tools work in Claude Code, IBM watsonx, Gemini, or any MCP client
 - **78 templates** covering OWASP Top 10:2025, LLM Top 10:2025, and CWE Top 25:2025
 - **Evidence integrity** — the AI references actual requests/responses, never fabricates
 - **Concise output** — no boilerplate code samples or tutorials, just actionable findings
-- **Any reporting platform** — export to JSON, CSV, or Markdown for import into Ghostwriter, Plextrac, or Word
+- **Any reporting platform** — export to JSON, CSV, Markdown, or Cervantes CSV
 
 ## Files
 

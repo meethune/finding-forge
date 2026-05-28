@@ -83,16 +83,99 @@ def export_markdown(finding: Finding) -> str:
     return "\n".join(lines)
 
 
+_CERVANTES_RISK_MAP: dict[str, str] = {
+    "Critical": "Critical",
+    "High": "High",
+    "Medium": "Medium",
+    "Low": "Low",
+    "Informational": "Info",
+}
+
+_CERVANTES_COLUMNS = [
+    "Name",
+    "Template",
+    "VulnCategory",
+    "Risk",
+    "Status",
+    "CVE",
+    "Description",
+    "Poc",
+    "Impact",
+    "CVSS3",
+    "CVSSVector",
+    "Remediation",
+    "RemediationComplexity",
+    "RemediationPriority",
+    "OwaspRisk",
+    "OwaspVector",
+    "OwaspLikehood",
+    "OwaspImpact",
+    "MitreTechniques",
+    "MitreValues",
+]
+
+
+def _escape_cervantes(value: str) -> str:
+    return value.replace(";", ",").replace("\n", "<br>")
+
+
+def export_cervantes(finding: Finding) -> str:
+    """Export a finding as Cervantes-compatible semicolon-delimited CSV."""
+    risk = _CERVANTES_RISK_MAP.get(finding.severity.rating, "Info")
+    cvss_score = (
+        str(finding.severity.cvss_score)
+        if finding.severity.cvss_score is not None
+        else "0.0"
+    )
+
+    row = [
+        _escape_cervantes(finding.title),
+        "False",
+        "General",
+        risk,
+        "Open",
+        "",
+        _escape_cervantes(finding.description),
+        _escape_cervantes(finding.replication_steps),
+        _escape_cervantes(finding.impact),
+        cvss_score,
+        finding.severity.cvss_vector or "",
+        _escape_cervantes(finding.mitigation),
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+    ]
+
+    header = ";".join(_CERVANTES_COLUMNS)
+    data = ";".join(row)
+    return f"{header}\n{data}\n"
+
+
+_FORMAT_ALIASES: dict[str, str] = {
+    "cervantes-csv": "cervantes",
+    "cervantes_csv": "cervantes",
+    "md": "markdown",
+}
+
+
 def export_finding(
     finding: Finding,
-    fmt: Literal["json", "csv", "markdown"],
+    fmt: Literal["json", "csv", "markdown", "cervantes"],
 ) -> str:
     """Export a finding in the specified format."""
-    if fmt == "json":
+    normalized = _FORMAT_ALIASES.get(fmt, fmt)
+    if normalized == "json":
         return export_json(finding)
-    if fmt == "csv":
+    if normalized == "csv":
         return json.dumps(export_csv_row(finding), indent=2)
-    if fmt == "markdown":
+    if normalized == "markdown":
         return export_markdown(finding)
+    if normalized == "cervantes":
+        return export_cervantes(finding)
     msg = f"Unsupported export format: {fmt}"
     raise ValueError(msg)

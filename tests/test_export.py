@@ -5,6 +5,7 @@ import json
 import pytest
 
 from finding_forge.export.formatters import (
+    export_cervantes,
     export_csv_row,
     export_finding,
     export_json,
@@ -120,8 +121,73 @@ class TestExportMarkdown:
         assert "## Detection" not in md
 
 
+class TestExportCervantes:
+    def test_semicolon_delimited(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        assert ";" in result
+
+    def test_has_20_columns(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        lines = result.strip().splitlines()
+        header_cols = lines[0].split(";")
+        data_cols = lines[1].split(";")
+        assert len(header_cols) == 20
+        assert len(data_cols) == 20
+
+    def test_maps_name(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert row[0] == "SQL Injection in Login Form"
+
+    def test_maps_risk(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert row[3] == "High"
+
+    def test_maps_cvss(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert row[9] == "9.1"
+        assert "CVSS:3.1" in row[10]
+
+    def test_maps_remediation(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert "parameterized queries" in row[11]
+
+    def test_maps_poc_from_replication_steps(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert "Navigate to /login" in row[7]
+
+    def test_status_defaults_to_open(self, sample_finding: Finding) -> None:
+        result = export_cervantes(sample_finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert row[4] == "Open"
+
+    def test_info_severity_mapping(self) -> None:
+        finding = Finding(
+            title="Info Finding",
+            description="Test",
+            severity=FindingSeverity(rating="Informational"),
+            impact="None",
+            mitigation="N/A",
+            replication_steps="N/A",
+        )
+        result = export_cervantes(finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert row[3] == "Info"
+
+
 class TestExportFinding:
-    @pytest.mark.parametrize("fmt", ["json", "csv", "markdown"])
+    @pytest.mark.parametrize("fmt", ["json", "csv", "markdown", "cervantes"])
     def test_dispatches_all_formats(self, sample_finding: Finding, fmt: str) -> None:
         result = export_finding(sample_finding, fmt)  # type: ignore[arg-type]
         assert isinstance(result, str)
@@ -139,6 +205,20 @@ class TestExportFinding:
 
     def test_markdown_format(self, sample_finding: Finding) -> None:
         result = export_finding(sample_finding, "markdown")
+        assert "# SQL Injection in Login Form" in result
+
+    def test_cervantes_format(self, sample_finding: Finding) -> None:
+        result = export_finding(sample_finding, "cervantes")
+        assert ";" in result
+        assert "SQL Injection in Login Form" in result
+
+    def test_cervantes_csv_alias(self, sample_finding: Finding) -> None:
+        result = export_finding(sample_finding, "cervantes-csv")  # type: ignore[arg-type]
+        assert ";" in result
+        assert "SQL Injection in Login Form" in result
+
+    def test_md_alias(self, sample_finding: Finding) -> None:
+        result = export_finding(sample_finding, "md")  # type: ignore[arg-type]
         assert "# SQL Injection in Login Form" in result
 
     def test_invalid_format_raises(self, sample_finding: Finding) -> None:

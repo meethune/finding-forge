@@ -89,7 +89,7 @@ def capture(
 @click.option(
     "--format",
     "fmt",
-    type=click.Choice(["json", "csv", "markdown"]),
+    type=click.Choice(["json", "csv", "markdown", "cervantes"]),
     default="markdown",
     help="Output format.",
 )

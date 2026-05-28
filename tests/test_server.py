@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from finding_forge.server import _resolve_templates_dir, create_server
+from finding_forge.server import _coerce_finding, _resolve_templates_dir, create_server
 
 
 @pytest.fixture()
@@ -98,6 +98,99 @@ class TestResolveTemplatesDir:
             result = _resolve_templates_dir()
             assert result.name == "findings"
             assert result.parent.name == "templates"
+
+
+class TestCoerceFinding:
+    def test_severity_string_to_object(self) -> None:
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "severity": "Critical",
+            "impact": "High impact",
+            "mitigation": "Fix it",
+            "replication_steps": "1. Do thing",
+        }
+        finding = _coerce_finding(json.dumps(data))
+        assert finding.severity.rating == "Critical"
+
+    def test_remediation_alias(self) -> None:
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "severity": {"rating": "High"},
+            "impact": "Impact",
+            "remediation": "Use parameterized queries",
+            "replication_steps": "Steps",
+        }
+        finding = _coerce_finding(json.dumps(data))
+        assert finding.mitigation == "Use parameterized queries"
+
+    def test_steps_alias(self) -> None:
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "severity": {"rating": "Low"},
+            "impact": "None",
+            "mitigation": "N/A",
+            "steps": "1. Go to page",
+        }
+        finding = _coerce_finding(json.dumps(data))
+        assert finding.replication_steps == "1. Go to page"
+
+    def test_missing_required_field_raises(self) -> None:
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "severity": "Medium",
+            "impact": "Impact",
+        }
+        with pytest.raises(Exception):
+            _coerce_finding(json.dumps(data))
+
+    def test_valid_json_passes_through(self) -> None:
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "severity": {"rating": "High", "cvss_score": 8.0},
+            "impact": "Impact",
+            "mitigation": "Fix",
+            "replication_steps": "Steps",
+        }
+        finding = _coerce_finding(json.dumps(data))
+        assert finding.severity.cvss_score == 8.0
+
+    def test_evidence_type_alias(self) -> None:
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "severity": "High",
+            "impact": "Impact",
+            "mitigation": "Fix",
+            "replication_steps": "Steps",
+            "evidence": [
+                {"type": "request", "description": "POST /login payload"},
+                {"type": "response", "description": "500 error with SQL"},
+            ],
+        }
+        finding = _coerce_finding(json.dumps(data))
+        assert len(finding.evidence) == 2
+        assert finding.evidence[0].title == "POST /login payload"
+        assert finding.evidence[0].evidence_type == "request"
+        assert finding.evidence[1].evidence_type == "response"
+
+    def test_evidence_missing_both_fields(self) -> None:
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "severity": "Medium",
+            "impact": "Impact",
+            "mitigation": "Fix",
+            "replication_steps": "Steps",
+            "evidence": [{"content": "some data"}],
+        }
+        finding = _coerce_finding(json.dumps(data))
+        assert finding.evidence[0].title == "Evidence"
+        assert finding.evidence[0].evidence_type == "other"
 
 
 class TestServerToolsRegistered:

@@ -17,6 +17,51 @@ from finding_forge.templates.library import (
     match_templates,
 )
 
+_FIELD_ALIASES: dict[str, str] = {
+    "remediation": "mitigation",
+    "steps": "replication_steps",
+    "reproduction_steps": "replication_steps",
+    "poc": "replication_steps",
+    "proof_of_concept": "replication_steps",
+    "cvss": "severity",
+    "risk": "severity",
+    "cwe": "cwe_ids",
+    "cwes": "cwe_ids",
+}
+
+
+def _coerce_finding(finding_json: str) -> Finding:
+    data = json.loads(finding_json)
+    if not isinstance(data, dict):
+        return Finding.model_validate_json(finding_json)
+
+    for alias, canonical in _FIELD_ALIASES.items():
+        if alias in data and canonical not in data:
+            data[canonical] = data.pop(alias)
+
+    sev = data.get("severity")
+    if isinstance(sev, str):
+        data["severity"] = {"rating": sev}
+
+    if "evidence" in data and isinstance(data["evidence"], list):
+        data["evidence"] = [_coerce_evidence_item(e) for e in data["evidence"]]
+
+    return Finding.model_validate(data)
+
+
+def _coerce_evidence_item(item: object) -> dict[str, object]:
+    if not isinstance(item, dict):
+        return {"title": str(item), "evidence_type": "other"}
+    coerced: dict[str, object] = dict(item)
+    if "title" not in coerced and "description" in coerced:
+        coerced["title"] = coerced.pop("description")
+    if "evidence_type" not in coerced and "type" in coerced:
+        coerced["evidence_type"] = coerced.pop("type")
+    coerced.setdefault("title", "Evidence")
+    coerced.setdefault("evidence_type", "other")
+    return coerced
+
+
 _BUNDLED_TEMPLATES_DIR = (
     Path(__file__).resolve().parent.parent.parent / "templates" / "findings"
 )
@@ -92,8 +137,23 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
 
     @server.tool()
     def export_finding(finding_json: str, fmt: str) -> str:
-        """Export a Finding as JSON, CSV, or Markdown."""
-        finding = Finding.model_validate_json(finding_json)
+        """Export a Finding as JSON, CSV, Markdown, or Cervantes CSV.
+
+        finding_json must be a JSON object with these fields:
+          title (str, required)
+          description (str, required)
+          severity (object: {rating, cvss_vector?, cvss_score?})
+          impact (str, required)
+          mitigation (str, required)
+          replication_steps (str, required)
+          references (list[str], optional)
+          detection (str, optional)
+          cwe_ids (list[str], optional)
+          evidence (list[{title, evidence_type}], optional)
+
+        fmt: "json", "csv", "markdown", or "cervantes"
+        """
+        finding = _coerce_finding(finding_json)
         return _export_finding(finding, fmt)  # type: ignore[arg-type]
 
     @server.resource("templates://findings/{name}")
