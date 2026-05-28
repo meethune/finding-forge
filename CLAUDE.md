@@ -2,51 +2,57 @@
 
 ## Project Purpose
 
-**finding-forge** is a tool-agnostic automation pipeline for penetration test reporting. It captures evidence from testing sessions (Burp Suite exports, screenshots, operator notes) and uses AI to draft complete findings from reusable templates.
+**finding-forge** is a provider-agnostic MCP server and CLI for penetration test reporting automation. It captures evidence from testing sessions (Burp Suite exports, screenshots, operator notes) and exposes tools, templates, and prompts that any MCP-capable AI client can use to draft complete findings.
 
-The core value proposition: **operators spend time on analysis, not data entry.** Evidence capture and finding drafting are automated; the operator reviews and edits AI drafts rather than writing from scratch.
+The core value proposition: **operators spend time on analysis, not data entry.** Evidence capture is automated; finding drafting happens in whatever AI client the team uses (Claude Code, IBM watsonx, Gemini, etc.).
 
-This project is intentionally decoupled from any specific reporting platform. Output formats (CSV, JSON, Markdown, DOCX) let operators import into whatever tool their team uses.
+This project is intentionally decoupled from any specific AI provider or reporting platform. Output formats (CSV, JSON, Markdown) let operators import into whatever tool their team uses.
 
 ## Architecture
 
-Four components connected by a structured evidence format (JSON):
+Core library (pure Python, no AI/MCP dependency) with two thin wrappers:
 
 ```
-Evidence Sources          Automation Layer              Output
-─────────────────    ─────────────────────────    ──────────────
-Burp Suite        →  burp/extract.py             
-Screenshots       →  evidence/capture.py    →    models/schemas.py
-Tool logs         →  drafting/drafter.py         
-Operator notes    →  export/formatters.py   →    CSV / JSON / MD / DOCX
+Core Library                          Wrappers
+──────────────────────────────    ─────────────────────────
+models/schemas.py (Pydantic)      server.py  (MCP server)
+burp/extract.py                   cli.py     (Click CLI)
+evidence/capture.py
+export/formatters.py
+templates/library.py
 ```
 
-1. **Burp Extraction** (`finding_forge.burp`) — Reads Burp project files or proxy history exports, filters to target scope, extracts requests/responses and scanner findings.
+1. **Burp Extraction** (`finding_forge.burp`) — Parses Burp Suite proxy history XML exports, filters to target scope, extracts requests/responses.
 
-2. **Evidence Capture** (`finding_forge.evidence`) — Aggregates Burp data, screenshots, tool logs, and conversational operator input into a structured evidence file.
+2. **Evidence Capture** (`finding_forge.evidence`) — Aggregates Burp data, screenshots, and operator notes into a structured EngagementSession (JSON).
 
-3. **AI Drafting** (`finding_forge.drafting`) — Matches evidence to findings library templates, uses Claude to draft complete findings with CVSS scoring, impact, mitigation, and replication steps.
+3. **Template Library** (`finding_forge.templates`) — Loads, lists, and matches finding templates from `templates/findings/` Markdown files with YAML frontmatter.
 
-4. **Export** (`finding_forge.export`) — Formats drafted findings for import into reporting platforms (CSV, JSON, Markdown, DOCX).
+4. **Export** (`finding_forge.export`) — Formats drafted findings for import into reporting platforms (CSV, JSON, Markdown).
 
-## Data Flow
+5. **MCP Server** (`finding_forge.server`) — Exposes all of the above as MCP tools, resources, and prompts. The `draft_finding` prompt replaces direct AI integration — the client's model executes the drafting.
 
-```
-Operator runs pentest-capture
-    → Burp data extracted + screenshots collected + operator describes session
-    → Structured EngagementSession (JSON)
+## MCP Tools
 
-Operator runs pentest-draft
-    → Evidence matched to template library
-    → AI drafts finding (description, CVSS, impact, mitigation, steps, references)
-    → Operator reviews/edits
-    → Exported in target format
-```
+- `extract_burp` — Parse Burp XML export, filter to target scope
+- `capture_evidence` — Create an engagement session with evidence
+- `list_finding_templates` — List all available templates
+- `get_finding_template` — Get a specific template by name
+- `match_finding_templates` — Find templates matching a query
+- `export_finding` — Format a finding as JSON/CSV/Markdown
+
+## MCP Resources
+
+- `templates://findings/{name}` — Read-only access to individual templates
+
+## MCP Prompts
+
+- `draft_finding` — Instructs any AI model to draft a complete finding from evidence and an optional template reference
 
 ## CLI Commands
 
 - `pentest-capture` — End-of-session evidence aggregation
-- `pentest-draft` — AI-assisted finding drafting from captured evidence
+- `finding-forge-mcp` — Start the MCP server
 
 ## Development Conventions
 
@@ -56,13 +62,13 @@ Operator runs pentest-draft
 - **Type checking**: `mypy --strict`
 - **Testing**: `pytest` with TDD — tests written before implementation
 - **Data models**: Pydantic v2 for all structured data
-- **AI integration**: Anthropic Python SDK (`anthropic`)
+- **MCP server**: Official `mcp` Python SDK (FastMCP)
 - **Secrets**: 1Password CLI (`op read`). Never hardcode API keys.
 - **Commits**: Conventional Commits specification
 
 ## Findings Template Library
 
-Templates live in `templates/findings/` as Markdown files. Each template must include:
+Templates live in `templates/findings/` as Markdown files with YAML frontmatter. Each template must include:
 
 - **title** — Dedup key (used for matching and import)
 - **description** — Standard vulnerability description
@@ -72,6 +78,8 @@ Templates live in `templates/findings/` as Markdown files. Each template must in
 - **replication_steps** — Generic steps (customized per-engagement by AI)
 - **references** — CWE, OWASP, and other authoritative sources
 - **detection** — Host and network detection techniques
+- **tags** — Keywords for template matching (e.g., `sqli`, `injection`, `owasp-a03`)
+- **cwe_ids** — CWE identifiers for matching
 
 Templates are never modified in-place during an engagement. The AI clones a template and customizes the copy with engagement-specific evidence.
 

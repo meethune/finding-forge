@@ -1,0 +1,146 @@
+"""Tests for export formatters."""
+
+import json
+
+import pytest
+
+from finding_forge.export.formatters import (
+    export_csv_row,
+    export_finding,
+    export_json,
+    export_markdown,
+)
+from finding_forge.models.schemas import Finding, FindingSeverity
+
+
+@pytest.fixture()
+def sample_finding() -> Finding:
+    return Finding(
+        title="SQL Injection in Login Form",
+        description="The login form is vulnerable to SQL injection.",
+        severity=FindingSeverity(
+            rating="High",
+            cvss_vector="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+            cvss_score=9.1,
+            justification="Full database compromise",
+        ),
+        impact="An attacker can extract all database contents.",
+        mitigation="Use parameterized queries.",
+        replication_steps="1. Navigate to /login\n2. Enter ' OR 1=1--",
+        references=[
+            "https://cwe.mitre.org/data/definitions/89.html",
+            "https://owasp.org/Top10/A03_2021-Injection/",
+        ],
+        detection="Monitor database logs for anomalous queries.",
+        cwe_ids=["CWE-89"],
+    )
+
+
+class TestExportJson:
+    def test_returns_valid_json(self, sample_finding: Finding) -> None:
+        result = export_json(sample_finding)
+        data = json.loads(result)
+        assert data["title"] == "SQL Injection in Login Form"
+
+    def test_includes_all_fields(self, sample_finding: Finding) -> None:
+        result = export_json(sample_finding)
+        data = json.loads(result)
+        assert "severity" in data
+        assert "impact" in data
+        assert "mitigation" in data
+        assert "replication_steps" in data
+        assert "references" in data
+        assert "cwe_ids" in data
+
+    def test_severity_nested(self, sample_finding: Finding) -> None:
+        result = export_json(sample_finding)
+        data = json.loads(result)
+        assert data["severity"]["rating"] == "High"
+        assert data["severity"]["cvss_score"] == 9.1
+
+
+class TestExportCsvRow:
+    def test_returns_flat_dict(self, sample_finding: Finding) -> None:
+        row = export_csv_row(sample_finding)
+        assert isinstance(row, dict)
+        assert all(isinstance(v, str) for v in row.values())
+
+    def test_contains_key_fields(self, sample_finding: Finding) -> None:
+        row = export_csv_row(sample_finding)
+        assert row["title"] == "SQL Injection in Login Form"
+        assert row["severity_rating"] == "High"
+        assert row["cvss_score"] == "9.1"
+
+    def test_flattens_severity(self, sample_finding: Finding) -> None:
+        row = export_csv_row(sample_finding)
+        assert "severity_rating" in row
+        assert "cvss_vector" in row
+        assert "cvss_score" in row
+
+    def test_joins_lists_as_strings(self, sample_finding: Finding) -> None:
+        row = export_csv_row(sample_finding)
+        assert "CWE-89" in row["cwe_ids"]
+        assert "cwe.mitre.org" in row["references"]
+
+
+class TestExportMarkdown:
+    def test_includes_title_as_heading(self, sample_finding: Finding) -> None:
+        md = export_markdown(sample_finding)
+        assert "# SQL Injection in Login Form" in md
+
+    def test_includes_severity_section(self, sample_finding: Finding) -> None:
+        md = export_markdown(sample_finding)
+        assert "High" in md
+        assert "9.1" in md
+
+    def test_includes_all_sections(self, sample_finding: Finding) -> None:
+        md = export_markdown(sample_finding)
+        assert "## Description" in md
+        assert "## Impact" in md
+        assert "## Mitigation" in md
+        assert "## Replication Steps" in md
+        assert "## References" in md
+
+    def test_includes_detection_when_present(self, sample_finding: Finding) -> None:
+        md = export_markdown(sample_finding)
+        assert "## Detection" in md
+        assert "database logs" in md
+
+    def test_omits_detection_when_empty(self) -> None:
+        finding = Finding(
+            title="Test",
+            description="Desc",
+            severity=FindingSeverity(rating="Low"),
+            impact="None",
+            mitigation="N/A",
+            replication_steps="N/A",
+            detection="",
+        )
+        md = export_markdown(finding)
+        assert "## Detection" not in md
+
+
+class TestExportFinding:
+    @pytest.mark.parametrize("fmt", ["json", "csv", "markdown"])
+    def test_dispatches_all_formats(self, sample_finding: Finding, fmt: str) -> None:
+        result = export_finding(sample_finding, fmt)  # type: ignore[arg-type]
+        assert isinstance(result, str)
+        assert len(result) > 0
+
+    def test_json_format(self, sample_finding: Finding) -> None:
+        result = export_finding(sample_finding, "json")
+        data = json.loads(result)
+        assert data["title"] == "SQL Injection in Login Form"
+
+    def test_csv_format(self, sample_finding: Finding) -> None:
+        result = export_finding(sample_finding, "csv")
+        data = json.loads(result)
+        assert data["title"] == "SQL Injection in Login Form"
+
+    def test_markdown_format(self, sample_finding: Finding) -> None:
+        result = export_finding(sample_finding, "markdown")
+        assert "# SQL Injection in Login Form" in result
+
+    def test_invalid_format_raises(self, sample_finding: Finding) -> None:
+        with pytest.raises(ValueError, match="Unsupported"):
+            export_finding(sample_finding, "docx")  # type: ignore[arg-type]

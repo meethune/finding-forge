@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!DOCTYPE items [
+<!ELEMENT items (item*)>
+<!ATTLIST items burpVersion CDATA "">
+<!ELEMENT item (time?, url, host, port, protocol, method, path, extension?, request, status, responselength?, mimetype?, response?, comment?)>
+<!ELEMENT time (#PCDATA)>
+<!ELEMENT url (#PCDATA)>
+<!ELEMENT host (#PCDATA)>
+<!ATTLIST host ip CDATA "">
+<!ELEMENT port (#PCDATA)>
+<!ELEMENT protocol (#PCDATA)>
+<!ELEMENT method (#PCDATA)>
+<!ELEMENT path (#PCDATA)>
+<!ELEMENT extension (#PCDATA)>
+<!ELEMENT request (#PCDATA)>
+<!ATTLIST request base64 (true|false) "false">
+<!ELEMENT status (#PCDATA)>
+<!ELEMENT responselength (#PCDATA)>
+<!ELEMENT mimetype (#PCDATA)>
+<!ELEMENT response (#PCDATA)>
+<!ATTLIST response base64 (true|false) "false">
+<!ELEMENT comment (#PCDATA)>
+]>
+<items burpVersion="2024.0.0">
+  <item>
+    <time>Mon Jun 15 10:30:00 UTC 2025</time>
+    <url><![CDATA[https://app.example.com/login]]></url>
+    <host ip="93.184.216.34">app.example.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[POST]]></method>
+    <path><![CDATA[/login]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[UE9TVCAvbG9naW4gSFRUUC8xLjENCkhvc3Q6IGFwcC5leGFtcGxlLmNvbQ0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi94LXd3dy1mb3JtLXVybGVuY29kZWQNCkNvbnRlbnQtTGVuZ3RoOiAyOQ0KDQp1c2VybmFtZT1hZG1pbiZwYXNzd29yZD10ZXN0]]></request>
+    <status>302</status>
+    <responselength>0</responselength>
+    <mimetype>HTML</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMzAyIEZvdW5kDQpMb2NhdGlvbjogL2Rhc2hib2FyZA0KU2V0LUNvb2tpZTogc2Vzc2lvbj1hYmMxMjMNCg0K]]></response>
+    <comment></comment>
+  </item>
+  <item>
+    <time>Mon Jun 15 10:31:00 UTC 2025</time>
+    <url><![CDATA[https://app.example.com/api/users]]></url>
+    <host ip="93.184.216.34">app.example.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/api/users]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[R0VUIC9hcGkvdXNlcnMgSFRUUC8xLjENCkhvc3Q6IGFwcC5leGFtcGxlLmNvbQ0KQXV0aG9yaXphdGlvbjogQmVhcmVyIHRvazEyMw0KDQo=]]></request>
+    <status>200</status>
+    <responselength>256</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCg0KW3siaWQiOjEsIm5hbWUiOiJhZG1pbiJ9XQ==]]></response>
+    <comment></comment>
+  </item>
+  <item>
+    <time>Mon Jun 15 10:32:00 UTC 2025</time>
+    <url><![CDATA[https://other.example.com/health]]></url>
+    <host ip="93.184.216.35">other.example.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/health]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[R0VUIC9oZWFsdGggSFRUUC8xLjENCkhvc3Q6IG90aGVyLmV4YW1wbGUuY29tDQoNCg==]]></request>
+    <status>200</status>
+    <responselength>15</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCg0KeyJzdGF0dXMiOiJvayJ9]]></response>
+    <comment></comment>
+  </item>
+  <item>
+    <time>Mon Jun 15 10:33:00 UTC 2025</time>
+    <url><![CDATA[https://app.example.com/api/admin]]></url>
+    <host ip="93.184.216.34">app.example.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/api/admin]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[R0VUIC9hcGkvYWRtaW4gSFRUUC8xLjENCkhvc3Q6IGFwcC5leGFtcGxlLmNvbQ0KDQo=]]></request>
+    <status>403</status>
+    <responselength>23</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgNDAzIEZvcmJpZGRlbg0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uDQoNCnsiZXJyb3IiOiJmb3JiaWRkZW4ifQ==]]></response>
+    <comment></comment>
+  </item>
+</items>
