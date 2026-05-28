@@ -112,21 +112,17 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
         if template_name:
             try:
                 tmpl = get_template(resolved_dir, template_name)
+                refs = ", ".join(tmpl.references)
+                cwes = ", ".join(tmpl.cwe_ids)
                 template_context = (
                     f"\n\n## Reference Template: {tmpl.title}\n\n"
-                    f"**Description:** {tmpl.description}\n\n"
-                    f"**Default Severity:** {tmpl.severity.rating}"
+                    f"**Severity baseline:** {tmpl.severity.rating}\n"
+                    f"**Mitigation guidance:** {tmpl.mitigation}\n"
+                    f"**References:** {refs}\n"
+                    f"**CWE:** {cwes}\n"
                 )
-                if tmpl.severity.cvss_vector:
-                    template_context += f" ({tmpl.severity.cvss_vector})"
-                template_context += (
-                    f"\n\n**Impact:** {tmpl.impact}\n\n"
-                    f"**Mitigation:** {tmpl.mitigation}\n\n"
-                    f"**Replication Steps:** {tmpl.replication_steps}\n\n"
-                    f"**Detection:** {tmpl.detection}\n\n"
-                    f"**References:** {', '.join(tmpl.references)}\n\n"
-                    f"**CWE:** {', '.join(tmpl.cwe_ids)}"
-                )
+                if tmpl.guidance:
+                    template_context += f"**Guidance:** {tmpl.guidance}\n"
             except FileNotFoundError:
                 template_context = (
                     f"\n\nTemplate '{template_name}' not found. "
@@ -137,24 +133,33 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
             UserMessage(
                 content=(
                     "You are a penetration test report writer. "
-                    "Draft a complete security finding based on the evidence below. "
-                    "Your output must include:\n\n"
-                    "1. **Title** — Clear, specific finding title\n"
-                    "2. **Description** — Technical description of the vulnerability\n"
-                    "3. **Severity** — CVSS 3.1 rating, vector, "
-                    "score, and justification\n"
-                    "4. **Impact** — Business and technical impact\n"
-                    "5. **Mitigation** — Specific remediation steps\n"
-                    "6. **Replication Steps** — Step-by-step "
-                    "reproduction using the evidence\n"
-                    "7. **References** — CWE, OWASP, and other authoritative sources\n"
-                    "8. **Detection** — How to detect this "
-                    "vulnerability or exploitation attempts\n\n"
-                    "Rules:\n"
-                    "- Never fabricate evidence — only reference what is provided\n"
-                    "- Mark any inferred details clearly\n"
-                    "- Use the template as a starting point if provided, "
-                    "but customize with engagement-specific evidence\n\n"
+                    "Draft a concise security finding from the "
+                    "evidence below.\n\n"
+                    "## Output sections\n\n"
+                    "1. **Title** — specific to this engagement\n"
+                    "2. **Description** — 2-4 sentences, technical\n"
+                    "3. **Severity** — CVSS 3.1 vector, score, "
+                    "1-sentence justification\n"
+                    "4. **Impact** — 2-3 sentences, business impact\n"
+                    "5. **Mitigation** — actionable bullet points, "
+                    "no sample code unless evidence cites code\n"
+                    "6. **Replication Steps** — from the evidence, "
+                    "not generic\n"
+                    "7. **References** — CWE/OWASP links only\n"
+                    "8. **Detection** — 1-2 sentences\n\n"
+                    "## Rules\n\n"
+                    "- Be concise. No filler, no preamble.\n"
+                    "- Evidence is the anchor — every claim must "
+                    "trace to provided evidence.\n"
+                    "- Never fabricate requests, responses, or "
+                    "endpoints not in the evidence.\n"
+                    "- No sample code, full implementations, or "
+                    "extended tutorials unless the evidence "
+                    "specifically references source code.\n"
+                    "- Use the template for severity baseline and "
+                    "references, not as content to expand.\n"
+                    "- Adjust severity from the template baseline "
+                    "based on actual engagement context.\n\n"
                     f"## Evidence\n\n{evidence_summary}"
                     f"{template_context}"
                 ),
