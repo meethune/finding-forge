@@ -1,0 +1,10 @@
+<!-- Reproduction of reflected XSS in portal.acme-demo.com /search -->
+<!-- Open in browser, screenshot the alert dialog for evidence -->
+<!DOCTYPE html>
+<html>
+<head><title>Portal Search — portal.acme-demo.com</title></head>
+<body>
+<h1>Search results for: <script>alert(document.domain)</script></h1>
+<p>No results found.</p>
+</body>
+</html>

