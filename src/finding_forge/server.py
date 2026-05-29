@@ -2,10 +2,12 @@
 
 import json
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts.base import Message, UserMessage
+from pydantic import BaseModel
 
 from finding_forge.burp.extract import extract_burp_data
 from finding_forge.evidence.capture import add_evidence, create_session
@@ -17,49 +19,9 @@ from finding_forge.templates.library import (
     match_templates,
 )
 
-_FIELD_ALIASES: dict[str, str] = {
-    "remediation": "mitigation",
-    "steps": "replication_steps",
-    "reproduction_steps": "replication_steps",
-    "poc": "replication_steps",
-    "proof_of_concept": "replication_steps",
-    "cvss": "severity",
-    "risk": "severity",
-    "cwe": "cwe_ids",
-    "cwes": "cwe_ids",
-}
 
-
-def _coerce_finding(finding_json: str) -> Finding:
-    data = json.loads(finding_json)
-    if not isinstance(data, dict):
-        return Finding.model_validate_json(finding_json)
-
-    for alias, canonical in _FIELD_ALIASES.items():
-        if alias in data and canonical not in data:
-            data[canonical] = data.pop(alias)
-
-    sev = data.get("severity")
-    if isinstance(sev, str):
-        data["severity"] = {"rating": sev}
-
-    if "evidence" in data and isinstance(data["evidence"], list):
-        data["evidence"] = [_coerce_evidence_item(e) for e in data["evidence"]]
-
-    return Finding.model_validate(data)
-
-
-def _coerce_evidence_item(item: object) -> dict[str, object]:
-    if not isinstance(item, dict):
-        return {"title": str(item), "evidence_type": "other"}
-    coerced: dict[str, object] = dict(item)
-    if "title" not in coerced and "description" in coerced:
-        coerced["title"] = coerced.pop("description")
-    if "evidence_type" not in coerced and "type" in coerced:
-        coerced["evidence_type"] = coerced.pop("type")
-    coerced.setdefault("title", "Evidence")
-    coerced.setdefault("evidence_type", "other")
-    return coerced
+def _dump_models(models: Sequence[BaseModel]) -> str:
+    return json.dumps([m.model_dump(mode="json") for m in models], indent=2)
 
 
 _BUNDLED_TEMPLATES_DIR = (
@@ -92,7 +54,7 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
     def extract_burp(xml_path: str, target_hosts: list[str]) -> str:
         """Parse Burp XML export, filter to target scope."""
         results = extract_burp_data(Path(xml_path), target_hosts)
-        return json.dumps([r.model_dump(mode="json") for r in results], indent=2)
+        return _dump_models(results)
 
     @server.tool()
     def capture_evidence(
@@ -121,7 +83,7 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
     def list_finding_templates() -> str:
         """List all available finding templates with metadata."""
         templates = list_templates(resolved_dir)
-        return json.dumps([t.model_dump(mode="json") for t in templates], indent=2)
+        return _dump_models(templates)
 
     @server.tool()
     def get_finding_template(name: str) -> str:
@@ -133,7 +95,7 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
     def match_finding_templates(query: str, max_results: int = 5) -> str:
         """Find templates matching a text query by tags, title, and CWE IDs."""
         results = match_templates(resolved_dir, query, max_results)
-        return json.dumps([t.model_dump(mode="json") for t in results], indent=2)
+        return _dump_models(results)
 
     @server.tool()
     def export_finding(finding_json: str, fmt: str) -> str:
@@ -153,8 +115,8 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
 
         fmt: "json", "csv", "markdown", or "cervantes"
         """
-        finding = _coerce_finding(finding_json)
-        return _export_finding(finding, fmt)  # type: ignore[arg-type]
+        finding = Finding.model_validate_json(finding_json)
+        return _export_finding(finding, fmt)
 
     @server.resource("templates://findings/{name}")
     def template_resource(name: str) -> str:

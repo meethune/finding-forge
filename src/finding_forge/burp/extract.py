@@ -91,6 +91,43 @@ def extract_burp_data(
     xml_path: Path,
     target_hosts: list[str],
 ) -> list[BurpRequest]:
-    """Parse Burp XML, filter to scope, and return structured requests."""
-    all_requests = parse_burp_xml(xml_path)
-    return filter_by_scope(all_requests, target_hosts)
+    """Parse Burp XML, filter to scope, and return structured requests.
+
+    Filters by host before decoding request/response bodies to avoid
+    wasted work on out-of-scope items.
+    """
+    if not xml_path.exists():
+        msg = f"Burp XML file not found: {xml_path}"
+        raise FileNotFoundError(msg)
+
+    host_set = set(target_hosts)
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    requests: list[BurpRequest] = []
+    for item in root.findall("item"):
+        host = _get_text(item, "host")
+        if host not in host_set:
+            continue
+
+        raw_request = _decode_content(item, "request")
+        raw_response = _decode_content(item, "response")
+        req_headers, req_body = _parse_http_message(raw_request)
+        resp_headers, resp_body = _parse_http_message(raw_response)
+        status_text = _get_text(item, "status")
+
+        requests.append(
+            BurpRequest(
+                url=_get_text(item, "url"),
+                method=_get_text(item, "method"),
+                host=host,
+                path=_get_text(item, "path"),
+                request_headers=req_headers,
+                request_body=req_body,
+                status_code=int(status_text) if status_text else 0,
+                response_headers=resp_headers,
+                response_body=resp_body,
+            )
+        )
+
+    return requests

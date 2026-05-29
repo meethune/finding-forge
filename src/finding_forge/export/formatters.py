@@ -1,7 +1,7 @@
 """Output formatters — exports drafted findings to CSV, JSON, Markdown, or DOCX."""
 
 import json
-from typing import Literal
+from collections.abc import Callable
 
 from finding_forge.models.schemas import Finding
 
@@ -156,26 +156,21 @@ def export_cervantes(finding: Finding) -> str:
     return f"{header}\n{data}\n"
 
 
-_FORMAT_ALIASES: dict[str, str] = {
-    "cervantes-csv": "cervantes",
-    "cervantes_csv": "cervantes",
-    "md": "markdown",
+_FORMAT_DISPATCH: dict[str, Callable[[Finding], str]] = {
+    "json": export_json,
+    "csv": lambda f: json.dumps(export_csv_row(f), indent=2),
+    "markdown": export_markdown,
+    "md": export_markdown,
+    "cervantes": export_cervantes,
+    "cervantes-csv": export_cervantes,
+    "cervantes_csv": export_cervantes,
 }
 
 
-def export_finding(
-    finding: Finding,
-    fmt: Literal["json", "csv", "markdown", "cervantes"],
-) -> str:
+def export_finding(finding: Finding, fmt: str) -> str:
     """Export a finding in the specified format."""
-    normalized = _FORMAT_ALIASES.get(fmt, fmt)
-    if normalized == "json":
-        return export_json(finding)
-    if normalized == "csv":
-        return json.dumps(export_csv_row(finding), indent=2)
-    if normalized == "markdown":
-        return export_markdown(finding)
-    if normalized == "cervantes":
-        return export_cervantes(finding)
-    msg = f"Unsupported export format: {fmt}"
-    raise ValueError(msg)
+    formatter = _FORMAT_DISPATCH.get(fmt)
+    if not formatter:
+        msg = f"Unsupported export format: {fmt}"
+        raise ValueError(msg)
+    return formatter(finding)

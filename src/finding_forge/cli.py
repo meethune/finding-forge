@@ -1,6 +1,7 @@
 """CLI entry points for finding-forge."""
 
 from pathlib import Path
+from urllib.parse import urlparse
 
 import click
 
@@ -54,7 +55,7 @@ def capture(
     )
 
     if burp_xml:
-        target_hosts = [target.split("//")[-1].split("/")[0].split(":")[0]]
+        target_hosts = [urlparse(target).hostname or target]
         requests = extract_burp_data(burp_xml, target_hosts)
         if requests:
             session = add_evidence(
@@ -106,7 +107,7 @@ def export_cmd(
 ) -> None:
     """Export a finding in the specified format."""
     finding = Finding.model_validate_json(finding_path.read_text(encoding="utf-8"))
-    result = export_finding(finding, fmt)  # type: ignore[arg-type]
+    result = export_finding(finding, fmt)
 
     if output:
         output.write_text(result, encoding="utf-8")

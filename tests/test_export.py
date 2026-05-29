@@ -189,7 +189,7 @@ class TestExportCervantes:
 class TestExportFinding:
     @pytest.mark.parametrize("fmt", ["json", "csv", "markdown", "cervantes"])
     def test_dispatches_all_formats(self, sample_finding: Finding, fmt: str) -> None:
-        result = export_finding(sample_finding, fmt)  # type: ignore[arg-type]
+        result = export_finding(sample_finding, fmt)
         assert isinstance(result, str)
         assert len(result) > 0
 
@@ -213,14 +213,14 @@ class TestExportFinding:
         assert "SQL Injection in Login Form" in result
 
     def test_cervantes_csv_alias(self, sample_finding: Finding) -> None:
-        result = export_finding(sample_finding, "cervantes-csv")  # type: ignore[arg-type]
+        result = export_finding(sample_finding, "cervantes-csv")
         assert ";" in result
         assert "SQL Injection in Login Form" in result
 
     def test_md_alias(self, sample_finding: Finding) -> None:
-        result = export_finding(sample_finding, "md")  # type: ignore[arg-type]
+        result = export_finding(sample_finding, "md")
         assert "# SQL Injection in Login Form" in result
 
     def test_invalid_format_raises(self, sample_finding: Finding) -> None:
         with pytest.raises(ValueError, match="Unsupported"):
-            export_finding(sample_finding, "docx")  # type: ignore[arg-type]
+            export_finding(sample_finding, "docx")

@@ -36,7 +36,7 @@ def _parse_sections(body: str) -> dict[str, str]:
 
 def _extract_references(text: str) -> list[str]:
     return [
-        line.lstrip("- ").strip()
+        line.strip().removeprefix("- ").strip()
         for line in text.splitlines()
         if line.strip().startswith("- ")
     ]

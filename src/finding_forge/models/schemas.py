@@ -1,8 +1,9 @@
 """Pydantic data models for evidence, findings, and engagement sessions."""
 
 from datetime import date, datetime
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class BurpRequest(BaseModel):
@@ -31,6 +32,19 @@ class Evidence(BaseModel):
     operator_notes: str = ""
     scanner_findings: list[str] = Field(default_factory=list)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        if "title" not in data and "description" in data:
+            data["title"] = data.pop("description")
+        if "evidence_type" not in data and "type" in data:
+            data["evidence_type"] = data.pop("type")
+        data.setdefault("title", "Evidence")
+        data.setdefault("evidence_type", "other")
+        return data
+
 
 class EngagementSession(BaseModel):
     """One testing session's captured evidence and metadata."""
@@ -51,8 +65,21 @@ class FindingSeverity(BaseModel):
     justification: str = ""
 
 
-class Finding(BaseModel):
-    """A drafted finding ready for export to a reporting platform."""
+_FINDING_FIELD_ALIASES: dict[str, str] = {
+    "remediation": "mitigation",
+    "steps": "replication_steps",
+    "reproduction_steps": "replication_steps",
+    "poc": "replication_steps",
+    "proof_of_concept": "replication_steps",
+    "cvss": "severity",
+    "risk": "severity",
+    "cwe": "cwe_ids",
+    "cwes": "cwe_ids",
+}
+
+
+class _FindingBase(BaseModel):
+    """Shared fields between findings and finding templates."""
 
     title: str
     description: str
@@ -60,25 +87,34 @@ class Finding(BaseModel):
     impact: str
     mitigation: str
     replication_steps: str
-    evidence: list[Evidence] = Field(default_factory=list)
     references: list[str] = Field(default_factory=list)
     detection: str = ""
     cwe_ids: list[str] = Field(default_factory=list)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_fields(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        for alias, canonical in _FINDING_FIELD_ALIASES.items():
+            if alias in data and canonical not in data:
+                data[canonical] = data.pop(alias)
+        sev = data.get("severity")
+        if isinstance(sev, str):
+            data["severity"] = {"rating": sev}
+        return data
 
-class FindingTemplate(BaseModel):
+
+class Finding(_FindingBase):
+    """A drafted finding ready for export to a reporting platform."""
+
+    evidence: list[Evidence] = Field(default_factory=list)
+
+
+class FindingTemplate(_FindingBase):
     """A reusable finding template from the template library."""
 
     name: str
-    title: str
-    description: str
-    severity: FindingSeverity
-    impact: str
-    mitigation: str
-    replication_steps: str
-    references: list[str] = Field(default_factory=list)
-    detection: str = ""
-    cwe_ids: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     finding_type: str = ""
     guidance: str = ""
