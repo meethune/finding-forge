@@ -177,6 +177,31 @@ class TestServerToolsRegistered:
         assert "get_finding_template" in tool_names
         assert "match_finding_templates" in tool_names
         assert "export_finding" in tool_names
+        assert "calculate_cvss" in tool_names
+
+
+class TestCalculateCvssTool:
+    async def test_calculates_score(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        result = await server.call_tool(
+            "calculate_cvss",
+            {
+                "attack_vector": "N",
+                "attack_complexity": "L",
+                "privileges_required": "N",
+                "user_interaction": "N",
+                "scope": "U",
+                "confidentiality": "H",
+                "integrity": "H",
+                "availability": "H",
+            },
+        )
+        content, _is_error = result
+        text = content[0].text  # type: ignore[union-attr]
+        data = json.loads(text)
+        assert data["score"] == 9.8
+        assert data["rating"] == "Critical"
+        assert "CVSS:3.1" in data["vector"]
 
 
 class TestServerPromptsRegistered:

@@ -10,6 +10,9 @@ from mcp.server.fastmcp.prompts.base import Message, UserMessage
 from pydantic import BaseModel
 
 from finding_forge.burp.extract import extract_burp_data
+from finding_forge.cvss.calculator import (
+    calculate_cvss as _calculate_cvss,
+)
 from finding_forge.evidence.capture import add_evidence, create_session
 from finding_forge.export.formatters import export_finding as _export_finding
 from finding_forge.models.schemas import Finding
@@ -117,6 +120,43 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
         """
         finding = Finding.model_validate_json(finding_json)
         return _export_finding(finding, fmt)
+
+    @server.tool()
+    def calculate_cvss(
+        attack_vector: str,
+        attack_complexity: str,
+        privileges_required: str,
+        user_interaction: str,
+        scope: str,
+        confidentiality: str,
+        integrity: str,
+        availability: str,
+    ) -> str:
+        """Calculate CVSS 3.1 score from individual metrics.
+
+        Each parameter accepts standard CVSS abbreviations:
+          attack_vector: N (Network), A (Adjacent), L (Local), P (Physical)
+          attack_complexity: L (Low), H (High)
+          privileges_required: N (None), L (Low), H (High)
+          user_interaction: N (None), R (Required)
+          scope: U (Unchanged), C (Changed)
+          confidentiality: N (None), L (Low), H (High)
+          integrity: N (None), L (Low), H (High)
+          availability: N (None), L (Low), H (High)
+
+        Returns JSON with vector, score, and rating.
+        """
+        result = _calculate_cvss(
+            attack_vector=attack_vector,
+            attack_complexity=attack_complexity,
+            privileges_required=privileges_required,
+            user_interaction=user_interaction,
+            scope=scope,
+            confidentiality=confidentiality,
+            integrity=integrity,
+            availability=availability,
+        )
+        return result.model_dump_json(indent=2)
 
     @server.resource("templates://findings/{name}")
     def template_resource(name: str) -> str:

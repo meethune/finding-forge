@@ -42,6 +42,7 @@ templates/library.py
 - `get_finding_template` — Get a specific template by name
 - `match_finding_templates` — Find templates matching a query
 - `export_finding` — Format a finding as JSON/CSV/Markdown/Cervantes CSV
+- `calculate_cvss` — Compute CVSS 3.1 score from 8 base metrics
 
 ## MCP Resources
 

@@ -64,6 +64,17 @@ class FindingSeverity(BaseModel):
     cvss_score: float | None = None
     justification: str = ""
 
+    @model_validator(mode="after")
+    def _auto_compute_score(self) -> "FindingSeverity":
+        if self.cvss_vector and self.cvss_score is None:
+            from finding_forge.cvss.calculator import score_from_vector
+
+            result = score_from_vector(self.cvss_vector)
+            self.cvss_score = result.score
+            if self.rating in ("", "Unknown"):
+                self.rating = result.rating
+        return self
+
 
 _FINDING_FIELD_ALIASES: dict[str, str] = {
     "remediation": "mitigation",

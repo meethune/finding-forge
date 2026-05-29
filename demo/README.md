@@ -54,15 +54,23 @@ Shows: `match_finding_templates` returns `cwe-89` (SQL Injection) and related te
 
 ---
 
-### Step 4: Draft the SQLi finding
+### Step 4: Calculate CVSS for the SQLi
 
-> "Draft a finding for the SQL injection I described in my notes. The Burp data has the actual requests and error responses. Use the cwe-89 template."
+> "Calculate the CVSS score for this SQL injection. It's network-accessible, low complexity, no privileges needed, no user interaction, scope unchanged, confidentiality and integrity are high, no availability impact."
 
-Shows: The AI combines the operator's narrative (from notes) with the raw HTTP evidence (from Burp) and the template's severity baseline to produce a concise, evidence-anchored finding. The operator's note that "this is critical — unauthenticated attacker gets full admin access" informs the severity justification.
+Shows: The AI calls `calculate_cvss` with `AV:N, AC:L, PR:N, UI:N, S:U, C:H, I:H, A:N` and gets back the exact vector string (`CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N`), score (9.1), and rating (Critical). No guessing — deterministic math.
 
 ---
 
-### Step 5: Draft the XSS finding (with screenshot)
+### Step 5: Draft the SQLi finding
+
+> "Draft a finding for the SQL injection I described in my notes. The Burp data has the actual requests and error responses. Use the cwe-89 template and the CVSS score you just calculated."
+
+Shows: The AI combines the operator's narrative (from notes) with the raw HTTP evidence (from Burp), the template's severity baseline, and the deterministic CVSS score to produce a concise, evidence-anchored finding.
+
+---
+
+### Step 6: Draft the XSS finding (with screenshot)
 
 > "Now draft the reflected XSS finding. Here's the screenshot showing the alert firing in the browser" *(drop or reference demo/screenshots/xss-search-alert.png)*
 >
@@ -72,13 +80,13 @@ Shows: The AI sees the screenshot (multimodal clients like Claude Code can read 
 
 ---
 
-### Step 6: Draft the IDOR finding
+### Step 7: Draft the IDOR finding
 
 > "Draft the IDOR finding. My notes mention PII exposure including SSN and salary data. The Burp requests show I accessed profiles for users 1 and 2 as user 42. Use the cwe-639 template."
 
 ---
 
-### Step 7: Export to Cervantes
+### Step 8: Export to Cervantes
 
 > "Export all three findings in cervantes format so I can import them"
 
@@ -90,7 +98,7 @@ Shows: `export_finding` with `fmt=cervantes` produces semicolon-delimited CSV ma
 
 ---
 
-### Step 8: Export as markdown (alternative)
+### Step 9: Export as markdown (alternative)
 
 > "Also export the SQLi finding as markdown for the executive summary"
 
@@ -100,6 +108,7 @@ Shows: Same finding, different format — Markdown for Word/Google Docs, Cervant
 
 ## What the audience sees
 
+- **Deterministic CVSS scoring** — the `calculate_cvss` tool computes exact scores from metrics, no AI guessing
 - **Three evidence types in one workflow** — Burp HTTP data, operator notes, and screenshots all feed into finding drafts
 - **Cervantes integration** — export findings as Cervantes-compatible CSV for bulk import (note: Cervantes' import is flaky, YMMV)
 - **No AI provider lock-in** — the same tools work in Claude Code, IBM watsonx, Gemini, or any MCP client

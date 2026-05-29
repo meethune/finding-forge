@@ -171,6 +171,25 @@ class TestFindingSeverity:
         )
         assert sev.cvss_score == 9.8
 
+    def test_auto_computes_score_from_vector(self) -> None:
+        sev = FindingSeverity(
+            rating="High",
+            cvss_vector="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        )
+        assert sev.cvss_score == 9.8
+
+    def test_does_not_overwrite_explicit_score(self) -> None:
+        sev = FindingSeverity(
+            rating="High",
+            cvss_vector="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            cvss_score=8.0,
+        )
+        assert sev.cvss_score == 8.0
+
+    def test_no_vector_no_auto_compute(self) -> None:
+        sev = FindingSeverity(rating="Medium")
+        assert sev.cvss_score is None
+
 
 class TestFinding:
     @pytest.fixture()
