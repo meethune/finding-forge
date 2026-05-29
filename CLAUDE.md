@@ -57,8 +57,16 @@ templates/library.py
 - `pentest-capture` — End-of-session evidence aggregation
 - `finding-forge-mcp` — Start the MCP server
 
+## Agent Skill
+
+- `skills/draft-finding/` — agentskills.io format skill enforcing CVSS scoring, evidence-anchored claims, and structured JSON output. Install: `cp -a skills/ ~/.bob/` (IBM Bob) or `cp -a skills/ ~/.claude/` (Claude Code).
+
 ## Development Conventions
 
+- **Input coercion**: `Finding` and `Evidence` have Pydantic `model_validator(mode="before")` that normalize field aliases (e.g., `remediation`→`mitigation`, `type`→`evidence_type`) and coerce `severity` from string to `{"rating": string}`. This runs on all entry points (MCP, CLI, direct construction).
+- **CVSS auto-compute**: `FindingSeverity` has a `model_validator(mode="after")` that computes `cvss_score` from `cvss_vector` when vector is present but score is missing. Uses the `cvss` library (RedHat).
+- **Export format aliases**: `export_finding` accepts aliases (`md`→`markdown`, `cervantes-csv`→`cervantes`) via `_FORMAT_DISPATCH` dict in `formatters.py`.
+- **Model inheritance**: `Finding` and `FindingTemplate` share a `_FindingBase` with 9 common fields. `Finding` adds `evidence`; `FindingTemplate` adds `name`, `tags`, `finding_type`, `guidance`.
 - **Python >=3.12**, managed with `uv`
 - **Formatting**: `ruff format` (black-compatible)
 - **Linting**: `ruff check`
@@ -70,6 +78,9 @@ templates/library.py
 - **Commits**: Conventional Commits specification
 
 ## Findings Template Library
+
+- 78 templates covering OWASP Top 10:2025, OWASP LLM Top 10:2025, and CWE Top 25:2025
+- Imported from sibling `template-generator` project via `scripts/import_templates.py`
 
 Templates live in `templates/findings/` as Markdown files with YAML frontmatter. Each template must include:
 
