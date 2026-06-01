@@ -20,7 +20,7 @@ class TestForgeGroup:
         runner = CliRunner()
         result = runner.invoke(forge, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        assert "1.0.0" in result.output
 
 
 class TestCaptureCommand:
