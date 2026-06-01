@@ -108,7 +108,7 @@ Shows: Same finding, different format — Markdown for Word/Google Docs, Cervant
 
 ### Step 10: Batch generate all findings
 
-> "Using finding forge tools, examine all the files in this directory and write each individual finding as markdown to disk. Make sure to include screenshots and not just reference them. Use the export_findings tool to generate the markdown."
+> "Using finding forge tools, parse and examine all the files in this directory and write each individual finding as markdown to disk. Use Image Render Syntax for screenshots and not Text Link syntax. Use the export_findings tool to generate the markdown."
 
 Shows: The AI autonomously scans the directory, parses the Burp export with `extract_burp`, reads the operator notes and screenshot, matches templates, calculates CVSS for each finding, and writes individual markdown files to disk — all from a single prompt. This is the complete end-to-end workflow.
 
