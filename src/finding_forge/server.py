@@ -158,6 +158,19 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
         )
         return result.model_dump_json(indent=2)
 
+    @server.tool()
+    def validate_finding(finding_json: str) -> str:
+        """Validate a Finding JSON object against the schema.
+
+        Returns "valid" if the finding passes validation,
+        or a list of specific errors to fix.
+        """
+        try:
+            Finding.model_validate_json(finding_json)
+        except Exception as e:
+            return f"Validation errors:\n{e}"
+        return "valid"
+
     @server.resource("templates://findings/{name}")
     def template_resource(name: str) -> str:
         """Read a specific finding template as a resource."""
@@ -197,27 +210,38 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
                     "You are a penetration test report writer. "
                     "Draft a concise security finding from the "
                     "evidence below.\n\n"
-                    "## Output sections\n\n"
-                    "1. **Title** — specific to this engagement\n"
-                    "2. **Description** — 2-4 sentences, technical\n"
-                    "3. **Severity** — CVSS 3.1 vector, score, "
-                    "1-sentence justification\n"
-                    "4. **Impact** — 2-3 sentences, business impact\n"
-                    "5. **Mitigation** — actionable bullet points, "
-                    "no sample code unless evidence cites code\n"
-                    "6. **Replication Steps** — from the evidence, "
-                    "not generic\n"
-                    "7. **References** — CWE/OWASP links only\n"
-                    "8. **Detection** — 1-2 sentences\n\n"
+                    "## Output format\n\n"
+                    "Output a single JSON code block matching this "
+                    "schema:\n\n"
+                    "```json\n"
+                    "{\n"
+                    '  "title": "string",\n'
+                    '  "description": "2-4 sentences",\n'
+                    '  "severity": {\n'
+                    '    "rating": "Critical|High|Medium|Low",\n'
+                    '    "cvss_vector": "CVSS:3.1/...",\n'
+                    '    "cvss_score": 0.0,\n'
+                    '    "justification": "1 sentence"\n'
+                    "  },\n"
+                    '  "impact": "2-3 sentences",\n'
+                    '  "mitigation": "bullet points",\n'
+                    '  "replication_steps": "from evidence",\n'
+                    '  "references": ["urls"],\n'
+                    '  "detection": "1-2 sentences",\n'
+                    '  "cwe_ids": ["CWE-XX"]\n'
+                    "}\n"
+                    "```\n\n"
+                    "Use the `calculate_cvss` tool to get the "
+                    "vector and score — do not estimate.\n\n"
                     "## Rules\n\n"
-                    "- Be concise. No filler, no preamble.\n"
+                    "- Output ONLY the JSON block. No preamble, "
+                    "no commentary.\n"
                     "- Evidence is the anchor — every claim must "
                     "trace to provided evidence.\n"
                     "- Never fabricate requests, responses, or "
                     "endpoints not in the evidence.\n"
-                    "- No sample code, full implementations, or "
-                    "extended tutorials unless the evidence "
-                    "specifically references source code.\n"
+                    "- No sample code unless evidence references "
+                    "source code.\n"
                     "- Use the template for severity baseline and "
                     "references, not as content to expand.\n"
                     "- Adjust severity from the template baseline "

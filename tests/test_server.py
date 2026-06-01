@@ -178,6 +178,38 @@ class TestServerToolsRegistered:
         assert "match_finding_templates" in tool_names
         assert "export_finding" in tool_names
         assert "calculate_cvss" in tool_names
+        assert "validate_finding" in tool_names
+
+
+class TestValidateFindingTool:
+    async def test_valid_finding(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        finding_json = json.dumps(
+            {
+                "title": "Test",
+                "description": "Desc",
+                "severity": {"rating": "High"},
+                "impact": "Impact",
+                "mitigation": "Fix",
+                "replication_steps": "Steps",
+            }
+        )
+        result = await server.call_tool(
+            "validate_finding", {"finding_json": finding_json}
+        )
+        content, _is_error = result
+        assert content[0].text == "valid"  # type: ignore[union-attr]
+
+    async def test_invalid_finding_returns_errors(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        finding_json = json.dumps({"title": "Incomplete"})
+        result = await server.call_tool(
+            "validate_finding", {"finding_json": finding_json}
+        )
+        content, _is_error = result
+        text = content[0].text  # type: ignore[union-attr]
+        assert "Validation errors" in text
+        assert "mitigation" in text.lower()
 
 
 class TestCalculateCvssTool:

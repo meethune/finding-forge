@@ -43,6 +43,7 @@ templates/library.py
 - `match_finding_templates` — Find templates matching a query
 - `export_finding` — Format a finding as JSON/CSV/Markdown/Cervantes CSV
 - `calculate_cvss` — Compute CVSS 3.1 score from 8 base metrics
+- `validate_finding` — Validate a Finding JSON object against the schema
 
 ## MCP Resources
 
@@ -56,10 +57,6 @@ templates/library.py
 
 - `pentest-capture` — End-of-session evidence aggregation
 - `finding-forge-mcp` — Start the MCP server
-
-## Agent Skill
-
-- `skills/draft-finding/` — agentskills.io format skill enforcing CVSS scoring, evidence-anchored claims, and structured JSON output. Install: `cp -a skills/ ~/.bob/` (IBM Bob) or `cp -a skills/ ~/.claude/` (Claude Code).
 
 ## Development Conventions
 

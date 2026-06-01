@@ -82,22 +82,7 @@ uv run finding-forge export --finding finding.json --format markdown
 | `match_finding_templates` | Find templates matching a query |
 | `export_finding` | Format a finding as JSON/CSV/Markdown/Cervantes CSV |
 | `calculate_cvss` | Compute CVSS 3.1 score from 8 individual base metrics |
-
-## Agent Skill
-
-The `skills/draft-finding/` directory contains an [agentskills.io](https://agentskills.io) skill that enforces finding quality — CVSS scoring via the `calculate_cvss` tool, evidence-anchored claims, concise output, and structured JSON output matching the Finding schema.
-
-**IBM Bob:**
-```bash
-cp -a skills/ ~/.bob/
-# Then use /draft-finding in any Bob session
-```
-
-**Claude Code:**
-```bash
-cp -a skills/ ~/.claude/
-# Then use /draft-finding in any Claude Code session
-```
+| `validate_finding` | Validate a Finding JSON object against the schema |
 
 ## Development
 

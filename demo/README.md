@@ -20,16 +20,6 @@ claude mcp add --scope user finding-forge -- \
   uv run --project /path/to/finding-forge finding-forge-mcp
 ```
 
-Optionally install the `draft-finding` agent skill for guided workflow:
-
-```bash
-# IBM Bob
-cp -a /path/to/finding-forge/skills/ ~/.bob/
-
-# Claude Code
-cp -a /path/to/finding-forge/skills/ ~/.claude/
-```
-
 ## Demo Script
 
 Open IBM Bob, Claude Code, or any MCP client from **any directory** and walk through these steps. Each quoted block is something you say to the AI.
@@ -116,17 +106,11 @@ Shows: Same finding, different format — Markdown for Word/Google Docs, Cervant
 
 ---
 
-### Step 10: Use the agent skill for the next finding
+### Step 10: Batch generate all findings
 
-> "/draft-finding"
+> "Using finding forge tools, examine all the files in this directory and write each individual finding as markdown to disk. Make sure to include screenshots and not just reference them. Use the export_findings tool to generate the markdown."
 
-Then provide the context:
-
-> "I need a finding for the reflected XSS in the search page. Here are my notes and the Burp export has the requests. There's also a screenshot at demo/screenshots/xss-search-alert.png."
-
-Shows: The `/draft-finding` skill takes over and walks through the full workflow automatically — matches the `cwe-79` template, calls `calculate_cvss` with the right metrics, drafts a concise finding with deterministic CVSS, and outputs structured JSON ready for `export_finding`. The operator just provides the evidence and the skill handles the rest.
-
-**Key demo moment:** Compare this skill-driven finding to the manually-prompted SQLi finding from Steps 4-5. Same quality, less operator effort — the skill enforces the workflow and quality standards automatically.
+Shows: The AI autonomously scans the directory, parses the Burp export with `extract_burp`, reads the operator notes and screenshot, matches templates, calculates CVSS for each finding, and writes individual markdown files to disk — all from a single prompt. This is the complete end-to-end workflow.
 
 ---
 
@@ -139,7 +123,6 @@ Shows: The `/draft-finding` skill takes over and walks through the full workflow
 - **78 templates** covering OWASP Top 10:2025, LLM Top 10:2025, and CWE Top 25:2025
 - **Evidence integrity** — the AI references actual requests/responses, never fabricates
 - **Concise output** — no boilerplate code samples or tutorials, just actionable findings
-- **Agent skill** — `/draft-finding` automates the full workflow so operators just provide evidence
 - **Any reporting platform** — export to JSON, CSV, Markdown, or Cervantes CSV
 
 ## Files
