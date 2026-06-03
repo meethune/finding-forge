@@ -1,26 +1,39 @@
 """Burp Suite proxy history XML extraction."""
 
 import base64
-import xml.etree.ElementTree as ET
+import binascii
 from pathlib import Path
+from xml.etree.ElementTree import Element
+
+import defusedxml.ElementTree as ET
 
 from finding_forge.models.schemas import BurpRequest
 
 
-def _get_text(element: ET.Element, tag: str) -> str:
+def _get_text(element: Element, tag: str) -> str:
     child = element.find(tag)
     if child is None or child.text is None:
         return ""
     return child.text
 
 
-def _decode_content(element: ET.Element, tag: str) -> str:
+def _safe_int(text: str) -> int:
+    try:
+        return int(text)
+    except (ValueError, TypeError):
+        return 0
+
+
+def _decode_content(element: Element, tag: str) -> str:
     child = element.find(tag)
     if child is None or child.text is None:
         return ""
     is_base64 = child.get("base64", "false") == "true"
     if is_base64:
-        return base64.b64decode(child.text).decode("utf-8", errors="replace")
+        try:
+            return base64.b64decode(child.text).decode("utf-8", errors="replace")
+        except (binascii.Error, ValueError):
+            return child.text or ""
     return child.text
 
 
@@ -69,7 +82,7 @@ def parse_burp_xml(xml_path: Path) -> list[BurpRequest]:
                 path=_get_text(item, "path"),
                 request_headers=req_headers,
                 request_body=req_body,
-                status_code=int(status_text) if status_text else 0,
+                status_code=_safe_int(status_text),
                 response_headers=resp_headers,
                 response_body=resp_body,
             )
@@ -124,7 +137,7 @@ def extract_burp_data(
                 path=_get_text(item, "path"),
                 request_headers=req_headers,
                 request_body=req_body,
-                status_code=int(status_text) if status_text else 0,
+                status_code=_safe_int(status_text),
                 response_headers=resp_headers,
                 response_body=resp_body,
             )

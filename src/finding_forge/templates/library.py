@@ -1,11 +1,15 @@
 """Template loading, listing, and matching for the findings library."""
 
+import logging
 import re
 from pathlib import Path
 
 import yaml
+from pydantic import ValidationError
 
 from finding_forge.models.schemas import FindingSeverity, FindingTemplate
+
+_logger = logging.getLogger(__name__)
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)$", re.DOTALL)
 
@@ -19,7 +23,10 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, object], str]:
         raise ValueError(msg)
     raw_yaml = match.group(1)
     body = match.group(2)
-    meta: dict[str, object] = yaml.safe_load(raw_yaml)
+    meta = yaml.safe_load(raw_yaml)
+    if not isinstance(meta, dict):
+        msg = "Template frontmatter is empty or not a YAML mapping"
+        raise ValueError(msg)
     return meta, body
 
 
@@ -77,15 +84,31 @@ def list_templates(templates_dir: Path) -> list[FindingTemplate]:
     """List all templates in a directory."""
     if not templates_dir.exists():
         return []
-    return sorted(
-        (load_template(p) for p in templates_dir.glob("*.md")),
-        key=lambda t: t.name,
-    )
+    templates: list[FindingTemplate] = []
+    for p in templates_dir.glob("*.md"):
+        try:
+            templates.append(load_template(p))
+        except (
+            ValueError,
+            KeyError,
+            TypeError,
+            ValidationError,
+            yaml.YAMLError,
+        ) as exc:
+            _logger.warning("Skipping malformed template %s: %s", p.name, exc)
+    templates.sort(key=lambda t: t.name)
+    return templates
 
 
 def get_template(templates_dir: Path, name: str) -> FindingTemplate:
     """Get a specific template by filename stem."""
-    path = templates_dir / f"{name}.md"
+    if "/" in name or "\\" in name:
+        msg = f"Invalid template name: {name}"
+        raise ValueError(msg)
+    path = (templates_dir / f"{name}.md").resolve()
+    if not path.is_relative_to(templates_dir.resolve()):
+        msg = f"Invalid template name: {name}"
+        raise ValueError(msg)
     return load_template(path)
 
 

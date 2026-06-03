@@ -56,6 +56,24 @@ class EngagementSession(BaseModel):
     evidence: list[Evidence] = Field(default_factory=list)
 
 
+_VALID_RATINGS: set[str] = {
+    "Critical",
+    "High",
+    "Medium",
+    "Low",
+    "Informational",
+}
+
+_RATING_ALIASES: dict[str, str] = {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "informational": "Informational",
+    "info": "Informational",
+}
+
+
 class FindingSeverity(BaseModel):
     """CVSS scoring with justification."""
 
@@ -66,6 +84,16 @@ class FindingSeverity(BaseModel):
 
     @model_validator(mode="after")
     def _auto_compute_score(self) -> "FindingSeverity":
+        if self.rating and self.rating not in ("", "Unknown"):
+            normalized = _RATING_ALIASES.get(self.rating.lower())
+            if normalized:
+                self.rating = normalized
+            elif self.rating not in _VALID_RATINGS:
+                msg = (
+                    f"Invalid severity rating: {self.rating!r}. "
+                    f"Must be one of: {', '.join(sorted(_VALID_RATINGS))}"
+                )
+                raise ValueError(msg)
         if self.cvss_vector and self.cvss_score is None:
             from finding_forge.cvss.calculator import score_from_vector
 

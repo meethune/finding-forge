@@ -191,6 +191,56 @@ class TestFindingSeverity:
         assert sev.cvss_score is None
 
 
+class TestSeverityRatingValidation:
+    def test_normalizes_lowercase_critical(self) -> None:
+        sev = FindingSeverity(rating="critical")
+        assert sev.rating == "Critical"
+
+    def test_normalizes_lowercase_high(self) -> None:
+        sev = FindingSeverity(rating="high")
+        assert sev.rating == "High"
+
+    def test_normalizes_lowercase_medium(self) -> None:
+        sev = FindingSeverity(rating="medium")
+        assert sev.rating == "Medium"
+
+    def test_normalizes_lowercase_low(self) -> None:
+        sev = FindingSeverity(rating="low")
+        assert sev.rating == "Low"
+
+    def test_normalizes_info_shorthand(self) -> None:
+        sev = FindingSeverity(rating="info")
+        assert sev.rating == "Informational"
+
+    def test_normalizes_informational_lowercase(self) -> None:
+        sev = FindingSeverity(rating="informational")
+        assert sev.rating == "Informational"
+
+    def test_normalizes_mixed_case(self) -> None:
+        sev = FindingSeverity(rating="HIGH")
+        assert sev.rating == "High"
+
+    def test_rejects_invalid_rating(self) -> None:
+        with pytest.raises(ValidationError, match="Invalid severity rating"):
+            FindingSeverity(rating="banana")
+
+    def test_empty_rating_auto_computes_from_vector(self) -> None:
+        sev = FindingSeverity(
+            rating="",
+            cvss_vector="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        )
+        assert sev.rating == "Critical"
+        assert sev.cvss_score == 9.8
+
+    def test_unknown_rating_auto_computes_from_vector(self) -> None:
+        sev = FindingSeverity(
+            rating="Unknown",
+            cvss_vector="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        )
+        assert sev.rating == "Critical"
+        assert sev.cvss_score == 9.8
+
+
 class TestFinding:
     @pytest.fixture()
     def sample_finding(self) -> Finding:

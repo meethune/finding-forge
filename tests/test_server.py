@@ -3,86 +3,14 @@
 import json
 import os
 from pathlib import Path
-from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
+from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from finding_forge.models.schemas import Evidence, Finding
 from finding_forge.server import _resolve_templates_dir, create_server
-
-
-@pytest.fixture()
-def templates_dir(tmp_path: Path) -> Path:
-    """Create temporary templates directory with sample templates."""
-    sqli = tmp_path / "sqli.md"
-    sqli.write_text(
-        dedent("""\
-        ---
-        title: SQL Injection
-        cwe_ids:
-          - CWE-89
-        tags:
-          - sqli
-          - injection
-        severity:
-          rating: High
-          cvss_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
-          cvss_score: 9.1
-        ---
-
-        ## Description
-
-        SQL injection vulnerability.
-
-        ## Impact
-
-        Database compromise.
-
-        ## Mitigation
-
-        Use parameterized queries.
-
-        ## Replication Steps
-
-        1. Inject payload
-
-        ## References
-
-        - https://cwe.mitre.org/data/definitions/89.html
-
-        ## Detection
-
-        Monitor database logs.
-        """)
-    )
-    return tmp_path
-
-
-@pytest.fixture()
-def burp_xml(tmp_path: Path) -> Path:
-    """Create a sample Burp XML export file."""
-    xml_file = tmp_path / "burp_export.xml"
-    xml_file.write_text(
-        '<?xml version="1.0"?>\n'
-        '<items burpVersion="2024.0.0">\n'
-        "  <item>\n"
-        "    <url><![CDATA[https://app.example.com/login]]></url>\n"
-        "    <host>app.example.com</host>\n"
-        "    <port>443</port>\n"
-        "    <protocol>https</protocol>\n"
-        "    <method><![CDATA[POST]]></method>\n"
-        "    <path><![CDATA[/login]]></path>\n"
-        '    <request base64="false"><![CDATA[POST /login HTTP/1.1\r\n'
-        "Host: app.example.com\r\n\r\nuser=admin]]></request>\n"
-        "    <status>200</status>\n"
-        '    <response base64="false"><![CDATA[HTTP/1.1 200 OK\r\n'
-        "Content-Type: text/html\r\n\r\nOK]]></response>\n"
-        "  </item>\n"
-        "</items>\n"
-    )
-    return xml_file
 
 
 class TestResolveTemplatesDir:
@@ -281,8 +209,9 @@ class TestListFindingTemplatesTool:
         content, _is_error = result
         text = content[0].text  # type: ignore[union-attr]
         data = json.loads(text)
-        assert len(data) == 1
-        assert data[0]["name"] == "sqli"
+        assert len(data) == 2
+        names = {t["name"] for t in data}
+        assert names == {"sqli", "xss-reflected"}
 
 
 class TestGetFindingTemplateTool:
@@ -290,9 +219,13 @@ class TestGetFindingTemplateTool:
         server = create_server(templates_dir)
         result = await server.call_tool("get_finding_template", {"name": "sqli"})
         content, _is_error = result
-        text = content[0].text  # type: ignore[union-attr]
-        data = json.loads(text)
+        data = json.loads(content[0].text)  # type: ignore[union-attr]
         assert data["title"] == "SQL Injection"
+
+    async def test_rejects_path_traversal(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        with pytest.raises(ToolError, match="Invalid template name"):
+            await server.call_tool("get_finding_template", {"name": "../etc/passwd"})
 
 
 class TestMatchFindingTemplatesTool:

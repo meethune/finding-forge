@@ -1,5 +1,6 @@
 """Output formatters — exports drafted findings to CSV, JSON, Markdown, or DOCX."""
 
+import http
 import json
 from collections.abc import Callable
 
@@ -53,7 +54,11 @@ def _render_http_request(req: BurpRequest, lines: list[str]) -> None:
     lines.append("**Response:**")
     lines.append("")
     lines.append("```http")
-    lines.append(f"HTTP/1.1 {req.status_code} OK")
+    try:
+        phrase = http.HTTPStatus(req.status_code).phrase
+    except ValueError:
+        phrase = ""
+    lines.append(f"HTTP/1.1 {req.status_code} {phrase}")
     for name, value in req.response_headers.items():
         lines.append(f"{name}: {value}")
     if req.response_body:
@@ -176,8 +181,14 @@ _CERVANTES_COLUMNS = [
 ]
 
 
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
 def _escape_cervantes(value: str) -> str:
-    return value.replace(";", ",").replace("\n", "<br>")
+    escaped = value.replace(";", ",").replace("\n", "<br>")
+    if escaped and escaped[0] in _FORMULA_PREFIXES:
+        escaped = f"'{escaped}"
+    return escaped
 
 
 def export_cervantes(finding: Finding) -> str:
@@ -200,7 +211,7 @@ def export_cervantes(finding: Finding) -> str:
         _escape_cervantes(finding.replication_steps),
         _escape_cervantes(finding.impact),
         cvss_score,
-        finding.severity.cvss_vector or "",
+        _escape_cervantes(finding.severity.cvss_vector or ""),
         _escape_cervantes(finding.mitigation),
         "",
         "",

@@ -1,7 +1,6 @@
 """Tests for the template library module."""
 
 from pathlib import Path
-from textwrap import dedent
 
 import pytest
 
@@ -11,105 +10,6 @@ from finding_forge.templates.library import (
     load_template,
     match_templates,
 )
-
-
-@pytest.fixture()
-def templates_dir(tmp_path: Path) -> Path:
-    """Create a temporary directory with sample template files."""
-    sqli = tmp_path / "sqli.md"
-    sqli.write_text(
-        dedent("""\
-        ---
-        title: SQL Injection
-        cwe_ids:
-          - CWE-89
-        tags:
-          - sqli
-          - injection
-          - database
-        finding_type: Web
-        severity:
-          rating: High
-          cvss_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
-          cvss_score: 9.1
-          justification: "Full database compromise"
-        ---
-
-        ## Description
-
-        SQL injection vulnerability.
-
-        ## Impact
-
-        Database compromise.
-
-        ## Mitigation
-
-        Use parameterized queries.
-
-        ## Replication Steps
-
-        1. Inject payload
-
-        ## References
-
-        - https://cwe.mitre.org/data/definitions/89.html
-
-        ## Detection
-
-        Monitor database logs.
-
-        ## Guidance
-
-        Use when error-based or blind SQLi is confirmed.
-        """)
-    )
-
-    xss = tmp_path / "xss-reflected.md"
-    xss.write_text(
-        dedent("""\
-        ---
-        title: Reflected Cross-Site Scripting (XSS)
-        cwe_ids:
-          - CWE-79
-        tags:
-          - xss
-          - reflected
-          - injection
-        finding_type: Cloud
-        severity:
-          rating: Medium
-          cvss_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
-          cvss_score: 6.1
-        ---
-
-        ## Description
-
-        Reflected XSS vulnerability.
-
-        ## Impact
-
-        Session hijacking.
-
-        ## Mitigation
-
-        Encode output.
-
-        ## Replication Steps
-
-        1. Inject script tag
-
-        ## References
-
-        - https://cwe.mitre.org/data/definitions/79.html
-
-        ## Detection
-
-        Deploy WAF rules.
-        """)
-    )
-
-    return tmp_path
 
 
 class TestLoadTemplate:
@@ -169,6 +69,26 @@ class TestListTemplates:
         names = {t.name for t in templates}
         assert names == {"sqli", "xss-reflected"}
 
+    def test_skips_malformed_template(self, templates_dir: Path) -> None:
+        (templates_dir / "bad.md").write_text("no frontmatter here")
+        templates = list_templates(templates_dir)
+        names = {t.name for t in templates}
+        assert names == {"sqli", "xss-reflected"}
+
+    def test_skips_template_with_invalid_yaml(self, templates_dir: Path) -> None:
+        (templates_dir / "bad-yaml.md").write_text("---\n: invalid: yaml:\n---\n")
+        templates = list_templates(templates_dir)
+        names = {t.name for t in templates}
+        assert names == {"sqli", "xss-reflected"}
+
+
+class TestLoadTemplateEdgeCases:
+    def test_empty_frontmatter_raises(self, tmp_path: Path) -> None:
+        tmpl_file = tmp_path / "empty.md"
+        tmpl_file.write_text("---\n\n---\n## Description\nTest.\n")
+        with pytest.raises(ValueError, match="not a YAML mapping"):
+            load_template(tmpl_file)
+
 
 class TestGetTemplate:
     def test_gets_by_name(self, templates_dir: Path) -> None:
@@ -182,6 +102,35 @@ class TestGetTemplate:
     def test_not_found_raises(self, templates_dir: Path) -> None:
         with pytest.raises(FileNotFoundError):
             get_template(templates_dir, "nonexistent")
+
+    def test_rejects_name_with_forward_slash(self, templates_dir: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid template name"):
+            get_template(templates_dir, "../etc/passwd")
+
+    def test_rejects_name_with_backslash(self, templates_dir: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid template name"):
+            get_template(templates_dir, "..\\etc\\passwd")
+
+    def test_rejects_symlink_escaping_dir(self, templates_dir: Path) -> None:
+        outside_file = templates_dir.parent / "secret.md"
+        outside_file.write_text(
+            "---\ntitle: Secret\nseverity:\n  rating: High\n---\n"
+            "## Description\nSecret.\n## Impact\nSecret.\n"
+            "## Mitigation\nSecret.\n## Replication Steps\nSecret.\n"
+        )
+        (templates_dir / "evil.md").symlink_to(outside_file)
+        with pytest.raises(ValueError, match="Invalid template name"):
+            get_template(templates_dir, "evil")
+
+    def test_allows_dotted_names(self, templates_dir: Path) -> None:
+        dotted = templates_dir / "cwe-89.2.md"
+        dotted.write_text(
+            "---\ntitle: CWE 89.2\nseverity:\n  rating: High\n---\n"
+            "## Description\nTest.\n## Impact\nTest.\n"
+            "## Mitigation\nTest.\n## Replication Steps\nTest.\n"
+        )
+        tmpl = get_template(templates_dir, "cwe-89.2")
+        assert tmpl.title == "CWE 89.2"
 
 
 class TestMatchTemplates:

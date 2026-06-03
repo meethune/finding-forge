@@ -1,6 +1,7 @@
 """MCP server for finding-forge — pentest evidence capture and finding drafting."""
 
 import json
+import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
@@ -32,12 +33,21 @@ _BUNDLED_TEMPLATES_DIR = (
 )
 
 
+_server_logger = logging.getLogger(__name__)
+
+
 def _resolve_templates_dir(override: Path | None = None) -> Path:
     if override:
         return override
     env_val = os.environ.get("FINDING_FORGE_TEMPLATES_DIR")
     if env_val:
         return Path(env_val)
+    if not _BUNDLED_TEMPLATES_DIR.exists():
+        _server_logger.warning(
+            "Bundled templates directory not found: %s. "
+            "Set FINDING_FORGE_TEMPLATES_DIR to override.",
+            _BUNDLED_TEMPLATES_DIR,
+        )
     return _BUNDLED_TEMPLATES_DIR
 
 

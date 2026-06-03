@@ -10,9 +10,11 @@ dependencies = [
     "mcp[cli]>=1.20",
     "pyyaml>=6.0",
     "cvss>=3.4",
+    "defusedxml>=0.7",
 ]
 
 [project.scripts]
+finding-forge = "finding_forge.cli:forge"
 pentest-capture = "finding_forge.cli:capture"
 finding-forge-mcp = "finding_forge.server:main"
 
@@ -49,6 +51,10 @@ packages = ["finding_forge"]
 
 [[tool.mypy.overrides]]
 module = "cvss"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "defusedxml.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

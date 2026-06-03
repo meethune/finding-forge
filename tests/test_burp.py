@@ -1,5 +1,6 @@
 """Tests for Burp Suite data extraction."""
 
+import base64
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -130,3 +131,136 @@ class TestExtractBurpData:
             ["nonexistent.example.com"],
         )
         assert results == []
+
+
+class TestXmlSafety:
+    def test_rejects_xml_entity_expansion(self, tmp_path: Path) -> None:
+        xml_content = (
+            '<?xml version="1.0"?>\n'
+            "<!DOCTYPE foo [\n"
+            '  <!ENTITY xxe "BOOM">\n'
+            "]>\n"
+            '<items burpVersion="2024.0.0">\n'
+            "  <item>\n"
+            "    <url>&xxe;</url>\n"
+            "    <host>example.com</host>\n"
+            "    <port>443</port>\n"
+            "    <protocol>https</protocol>\n"
+            "    <method>GET</method>\n"
+            "    <path>/</path>\n"
+            '    <request base64="false">'
+            "GET / HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n"
+            "</request>\n"
+            "    <status>200</status>\n"
+            '    <response base64="false">'
+            "HTTP/1.1 200 OK\\r\\n\\r\\n</response>\n"
+            "  </item>\n"
+            "</items>\n"
+        )
+        xml_file = tmp_path / "xxe.xml"
+        xml_file.write_text(xml_content)
+        with pytest.raises(ValueError):
+            parse_burp_xml(xml_file)
+
+
+class TestCorruptBase64:
+    def test_handles_corrupt_base64_request(self, tmp_path: Path) -> None:
+        xml_content = (
+            '<?xml version="1.0"?>\n'
+            '<items burpVersion="2024.0.0">\n'
+            "  <item>\n"
+            "    <url>https://example.com/</url>\n"
+            "    <host>example.com</host>\n"
+            "    <port>443</port>\n"
+            "    <protocol>https</protocol>\n"
+            "    <method>GET</method>\n"
+            "    <path>/</path>\n"
+            '    <request base64="true">!!!not-valid-base64!!!</request>\n'
+            "    <status>200</status>\n"
+            '    <response base64="false">HTTP/1.1 200 OK\r\n\r\nOK</response>\n'
+            "  </item>\n"
+            "</items>\n"
+        )
+        xml_file = tmp_path / "corrupt.xml"
+        xml_file.write_text(xml_content)
+        requests = parse_burp_xml(xml_file)
+        assert len(requests) == 1
+
+    def test_handles_corrupt_base64_response(self, tmp_path: Path) -> None:
+        valid_request = base64.b64encode(
+            b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
+        ).decode()
+        xml_content = (
+            '<?xml version="1.0"?>\n'
+            '<items burpVersion="2024.0.0">\n'
+            "  <item>\n"
+            "    <url>https://example.com/</url>\n"
+            "    <host>example.com</host>\n"
+            "    <port>443</port>\n"
+            "    <protocol>https</protocol>\n"
+            "    <method>GET</method>\n"
+            "    <path>/</path>\n"
+            f'    <request base64="true">{valid_request}</request>\n'
+            "    <status>200</status>\n"
+            '    <response base64="true">!!!corrupt!!!</response>\n'
+            "  </item>\n"
+            "</items>\n"
+        )
+        xml_file = tmp_path / "corrupt_resp.xml"
+        xml_file.write_text(xml_content)
+        requests = parse_burp_xml(xml_file)
+        assert len(requests) == 1
+
+
+class TestNonNumericStatusCode:
+    def test_handles_non_numeric_status_code(self, tmp_path: Path) -> None:
+        xml_content = (
+            '<?xml version="1.0"?>\n'
+            '<items burpVersion="2024.0.0">\n'
+            "  <item>\n"
+            "    <url>https://example.com/</url>\n"
+            "    <host>example.com</host>\n"
+            "    <port>443</port>\n"
+            "    <protocol>https</protocol>\n"
+            "    <method>GET</method>\n"
+            "    <path>/</path>\n"
+            '    <request base64="false">'
+            "GET / HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n"
+            "</request>\n"
+            "    <status>abc</status>\n"
+            '    <response base64="false">'
+            "HTTP/1.1 200 OK\\r\\n\\r\\n</response>\n"
+            "  </item>\n"
+            "</items>\n"
+        )
+        xml_file = tmp_path / "bad_status.xml"
+        xml_file.write_text(xml_content)
+        requests = parse_burp_xml(xml_file)
+        assert len(requests) == 1
+        assert requests[0].status_code == 0
+
+    def test_handles_empty_status_code(self, tmp_path: Path) -> None:
+        xml_content = (
+            '<?xml version="1.0"?>\n'
+            '<items burpVersion="2024.0.0">\n'
+            "  <item>\n"
+            "    <url>https://example.com/</url>\n"
+            "    <host>example.com</host>\n"
+            "    <port>443</port>\n"
+            "    <protocol>https</protocol>\n"
+            "    <method>GET</method>\n"
+            "    <path>/</path>\n"
+            '    <request base64="false">'
+            "GET / HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n"
+            "</request>\n"
+            "    <status></status>\n"
+            '    <response base64="false">'
+            "HTTP/1.1 200 OK\\r\\n\\r\\n</response>\n"
+            "  </item>\n"
+            "</items>\n"
+        )
+        xml_file = tmp_path / "empty_status.xml"
+        xml_file.write_text(xml_content)
+        requests = parse_burp_xml(xml_file)
+        assert len(requests) == 1
+        assert requests[0].status_code == 0

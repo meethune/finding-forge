@@ -224,6 +224,65 @@ class TestExportMarkdown:
         assert "HTTP/1.1 200 OK" in md
         assert "<html>Welcome admin</html>" in md
 
+    def test_renders_non_200_status_phrase(self) -> None:
+        finding = Finding(
+            title="Test",
+            description="Desc",
+            severity=FindingSeverity(rating="High"),
+            impact="Impact",
+            mitigation="Fix",
+            replication_steps="Steps",
+            evidence=[
+                Evidence(
+                    title="Redirect",
+                    evidence_type="http",
+                    requests=[
+                        BurpRequest(
+                            url="https://example.com/old",
+                            method="GET",
+                            host="example.com",
+                            path="/old",
+                            request_headers={},
+                            status_code=302,
+                            response_headers={"Location": "/new"},
+                        ),
+                    ],
+                )
+            ],
+        )
+        md = export_markdown(finding)
+        assert "HTTP/1.1 302 Found" in md
+        assert "HTTP/1.1 302 OK" not in md
+
+    def test_renders_unknown_status_code_gracefully(self) -> None:
+        finding = Finding(
+            title="Test",
+            description="Desc",
+            severity=FindingSeverity(rating="High"),
+            impact="Impact",
+            mitigation="Fix",
+            replication_steps="Steps",
+            evidence=[
+                Evidence(
+                    title="Unknown",
+                    evidence_type="http",
+                    requests=[
+                        BurpRequest(
+                            url="https://example.com/",
+                            method="GET",
+                            host="example.com",
+                            path="/",
+                            request_headers={},
+                            status_code=999,
+                            response_headers={},
+                        ),
+                    ],
+                )
+            ],
+        )
+        md = export_markdown(finding)
+        assert "HTTP/1.1 999" in md
+
     def test_evidence_appears_after_replication_before_references(self) -> None:
         finding = Finding(
             title="Test",
@@ -329,6 +388,71 @@ class TestExportCervantes:
         lines = result.strip().splitlines()
         row = lines[1].split(";")
         assert row[3] == "Info"
+
+
+class TestCervantesEscaping:
+    def _make_finding(self, title: str) -> Finding:
+        return Finding(
+            title=title,
+            description="Desc",
+            severity=FindingSeverity(rating="High"),
+            impact="Impact",
+            mitigation="Fix",
+            replication_steps="Steps",
+        )
+
+    def test_escapes_formula_equals(self) -> None:
+        result = export_cervantes(self._make_finding("=CMD('calc')"))
+        row = result.strip().splitlines()[1].split(";")
+        assert row[0] == "'=CMD('calc')"
+
+    def test_escapes_formula_plus(self) -> None:
+        result = export_cervantes(self._make_finding("+CMD('calc')"))
+        row = result.strip().splitlines()[1].split(";")
+        assert row[0] == "'+CMD('calc')"
+
+    def test_escapes_formula_minus(self) -> None:
+        result = export_cervantes(self._make_finding("-1+2"))
+        row = result.strip().splitlines()[1].split(";")
+        assert row[0] == "'-1+2"
+
+    def test_escapes_formula_at(self) -> None:
+        result = export_cervantes(self._make_finding("@SUM(A1)"))
+        row = result.strip().splitlines()[1].split(";")
+        assert row[0] == "'@SUM(A1)"
+
+    def test_escapes_formula_tab(self) -> None:
+        result = export_cervantes(self._make_finding("\tmalicious"))
+        row = result.strip().splitlines()[1].split(";")
+        assert row[0] == "'\tmalicious"
+
+    def test_escapes_formula_cr(self) -> None:
+        result = export_cervantes(self._make_finding("\rmalicious"))
+        row = result.strip().splitlines()[1].split(";")
+        assert row[0].startswith("'")
+
+    def test_normal_values_unchanged(self) -> None:
+        result = export_cervantes(self._make_finding("SQL Injection"))
+        row = result.strip().splitlines()[1].split(";")
+        assert row[0] == "SQL Injection"
+
+    def test_cvss_vector_is_escaped(self) -> None:
+        finding = Finding(
+            title="Test",
+            description="Desc",
+            severity=FindingSeverity(
+                rating="High",
+                cvss_vector="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+                cvss_score=9.1,
+            ),
+            impact="Impact",
+            mitigation="Fix",
+            replication_steps="Steps",
+        )
+        result = export_cervantes(finding)
+        lines = result.strip().splitlines()
+        row = lines[1].split(";")
+        assert len(row) == 20
 
 
 class TestExportFinding:
