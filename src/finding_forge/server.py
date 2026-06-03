@@ -447,6 +447,10 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
                     "7. If evidence is insufficient to support a "
                     "claim, note the limitation rather than "
                     "fabricating support.\n"
+                    "8. Wrap ALL payloads, HTML tags, URLs containing "
+                    "payloads, and code snippets in backtick inline "
+                    "code so they render correctly in markdown and "
+                    "are not interpreted as live HTML.\n"
                 ),
             ),
         ]
