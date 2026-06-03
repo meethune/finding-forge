@@ -165,34 +165,40 @@ class TestExportMarkdown:
         assert "### Burp Capture - Login Bypass" in md
         assert "### Screenshot - Admin Dashboard" in md
 
-    def test_includes_evidence_type(self, finding_with_evidence: Finding) -> None:
-        md = export_markdown(finding_with_evidence)
-        assert "**Type:** http" in md
-
     def test_includes_operator_notes(self, finding_with_evidence: Finding) -> None:
         md = export_markdown(finding_with_evidence)
         assert "Confirmed bypass with admin privileges." in md
 
-    def test_renders_screenshots_as_images(
+    def test_renders_screenshots_as_images_with_evidence_title(
         self, finding_with_evidence: Finding
     ) -> None:
         md = export_markdown(finding_with_evidence)
-        assert "![sqli_login.png](screenshots/sqli_login.png)" in md
-        assert "![admin_dashboard.png](screenshots/admin_dashboard.png)" in md
+        assert "![Burp Capture - Login Bypass](screenshots/sqli_login.png)" in md
+        assert "![Screenshot - Admin Dashboard](screenshots/admin_dashboard.png)" in md
+
+    def test_no_redundant_screenshots_header(
+        self, finding_with_evidence: Finding
+    ) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "**Screenshots:**" not in md
 
     def test_includes_scanner_findings(self, finding_with_evidence: Finding) -> None:
         md = export_markdown(finding_with_evidence)
         assert "SQLi detected by Burp Scanner" in md
 
-    def test_includes_request_details(self, finding_with_evidence: Finding) -> None:
+    def test_renders_http_request_block(self, finding_with_evidence: Finding) -> None:
         md = export_markdown(finding_with_evidence)
-        assert "POST" in md
-        assert "https://target.example.com/login" in md
+        assert "**Request:**" in md
+        assert "```http" in md
+        assert "POST /login HTTP/1.1" in md
+        assert "Host: target.example.com" in md
+        assert "Content-Type: application/x-www-form-urlencoded" in md
         assert "user=admin&pass=' OR 1=1--" in md
 
-    def test_includes_response_details(self, finding_with_evidence: Finding) -> None:
+    def test_renders_http_response_block(self, finding_with_evidence: Finding) -> None:
         md = export_markdown(finding_with_evidence)
-        assert "200" in md
+        assert "**Response:**" in md
+        assert "HTTP/1.1 200 OK" in md
         assert "<html>Welcome admin</html>" in md
 
     def test_omits_evidence_section_when_empty(self, sample_finding: Finding) -> None:

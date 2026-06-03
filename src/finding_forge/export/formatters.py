@@ -2,9 +2,8 @@
 
 import json
 from collections.abc import Callable
-from pathlib import PurePosixPath
 
-from finding_forge.models.schemas import Evidence, Finding
+from finding_forge.models.schemas import BurpRequest, Evidence, Finding
 
 
 def export_json(finding: Finding) -> str:
@@ -34,23 +33,47 @@ def export_csv_row(finding: Finding) -> dict[str, str]:
     }
 
 
+def _render_http_request(req: BurpRequest, lines: list[str]) -> None:
+    """Render a BurpRequest as HTTP request/response code blocks."""
+    lines.append("**Request:**")
+    lines.append("")
+    lines.append("```http")
+    lines.append(f"{req.method} {req.path} HTTP/1.1")
+    lines.append(f"Host: {req.host}")
+    for name, value in req.request_headers.items():
+        if name.lower() != "host":
+            lines.append(f"{name}: {value}")
+    if req.request_body:
+        lines.append("")
+        lines.append(req.request_body)
+    lines.append("```")
+    lines.append("")
+
+    lines.append("**Response:**")
+    lines.append("")
+    lines.append("```http")
+    lines.append(f"HTTP/1.1 {req.status_code} OK")
+    for name, value in req.response_headers.items():
+        lines.append(f"{name}: {value}")
+    if req.response_body:
+        lines.append("")
+        lines.append(req.response_body)
+    lines.append("```")
+    lines.append("")
+
+
 def _render_evidence(evidence: Evidence, lines: list[str]) -> None:
     """Render a single evidence item as Markdown subsections."""
     lines.append(f"### {evidence.title}")
-    lines.append("")
-    lines.append(f"**Type:** {evidence.evidence_type}")
     lines.append("")
 
     if evidence.operator_notes:
         lines.append(evidence.operator_notes)
         lines.append("")
 
+    for screenshot in evidence.screenshots:
+        lines.append(f"![{evidence.title}]({screenshot})")
     if evidence.screenshots:
-        lines.append("**Screenshots:**")
-        lines.append("")
-        for screenshot in evidence.screenshots:
-            alt = PurePosixPath(screenshot).name
-            lines.append(f"![{alt}]({screenshot})")
         lines.append("")
 
     if evidence.scanner_findings:
@@ -61,22 +84,7 @@ def _render_evidence(evidence: Evidence, lines: list[str]) -> None:
         lines.append("")
 
     for req in evidence.requests:
-        lines.append(f"**{req.method} {req.url}**")
-        lines.append("")
-        if req.request_body:
-            lines.append("Request body:")
-            lines.append("")
-            lines.append("```")
-            lines.append(req.request_body)
-            lines.append("```")
-            lines.append("")
-        lines.append(f"Response ({req.status_code}):")
-        lines.append("")
-        if req.response_body:
-            lines.append("```")
-            lines.append(req.response_body)
-            lines.append("```")
-            lines.append("")
+        _render_http_request(req, lines)
 
 
 def export_markdown(finding: Finding) -> str:
