@@ -13,7 +13,7 @@ CSV_PATH = (
     / "data"
     / "ghostwriter-findings-library-import.csv"
 )
-OUTPUT_DIR = _PROJECT_ROOT / "templates" / "findings"
+OUTPUT_DIR = _PROJECT_ROOT / "src" / "finding_forge" / "templates" / "findings"
 
 
 def _slugify(text: str) -> str:

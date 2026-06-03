@@ -26,7 +26,7 @@ templates/library.py
 
 2. **Evidence Capture** (`finding_forge.evidence`) — Aggregates Burp data, screenshots, and operator notes into a structured EngagementSession (JSON).
 
-3. **Template Library** (`finding_forge.templates`) — Loads, lists, and matches finding templates from `templates/findings/` Markdown files with YAML frontmatter.
+3. **Template Library** (`finding_forge.templates`) — Loads, lists, and matches finding templates from bundled Markdown files with YAML frontmatter. Templates are packaged inside the wheel at `finding_forge/templates/findings/` and resolved via `importlib.resources`. Custom template directories can override via `FINDING_FORGE_TEMPLATES_DIR` env var or `create_server(templates_dir=...)`.
 
 4. **Export** (`finding_forge.export`) — Formats drafted findings for import into reporting platforms (CSV, JSON, Markdown, Cervantes CSV).
 
@@ -80,7 +80,7 @@ templates/library.py
 - 78 templates covering OWASP Top 10:2025, OWASP LLM Top 10:2025, and CWE Top 25:2025
 - Imported from sibling `template-generator` project via `scripts/import_templates.py`
 
-Templates live in `templates/findings/` as Markdown files with YAML frontmatter. Each template must include:
+Templates live in `src/finding_forge/templates/findings/` as Markdown files with YAML frontmatter (packaged inside the wheel via `importlib.resources`). Each template must include:
 
 - **title** — Dedup key (used for matching and import)
 - **description** — Standard vulnerability description

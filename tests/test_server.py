@@ -10,7 +10,11 @@ from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from finding_forge.models.schemas import Evidence, Finding
-from finding_forge.server import _resolve_templates_dir, create_server
+from finding_forge.server import (
+    _BUNDLED_TEMPLATES_DIR,
+    _resolve_templates_dir,
+    create_server,
+)
 
 
 class TestResolveTemplatesDir:
@@ -28,6 +32,10 @@ class TestResolveTemplatesDir:
             result = _resolve_templates_dir()
             assert result.name == "findings"
             assert result.parent.name == "templates"
+
+    def test_bundled_path_resolves_to_existing_dir(self) -> None:
+        assert _BUNDLED_TEMPLATES_DIR.exists()
+        assert _BUNDLED_TEMPLATES_DIR.is_dir()
 
 
 class TestModelCoercion:

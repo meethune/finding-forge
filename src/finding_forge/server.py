@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from collections.abc import Sequence
+from importlib.resources import files
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
@@ -28,8 +29,8 @@ def _dump_models(models: Sequence[BaseModel]) -> str:
     return json.dumps([m.model_dump(mode="json") for m in models], indent=2)
 
 
-_BUNDLED_TEMPLATES_DIR = (
-    Path(__file__).resolve().parent.parent.parent / "templates" / "findings"
+_BUNDLED_TEMPLATES_DIR = Path(
+    str(files("finding_forge").joinpath("templates", "findings"))
 )
 
 

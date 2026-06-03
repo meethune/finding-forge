@@ -1,5 +1,6 @@
 """Tests for the template library module."""
 
+from importlib.resources import files
 from pathlib import Path
 
 import pytest
@@ -176,10 +177,16 @@ class TestMatchTemplates:
         assert results[0].name == "xss-reflected"
 
 
-_REAL_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates" / "findings"
+_REAL_TEMPLATES_DIR = Path(
+    str(files("finding_forge").joinpath("templates", "findings"))
+)
 
 
 class TestBundledTemplates:
+    def test_bundled_templates_dir_exists(self) -> None:
+        assert _REAL_TEMPLATES_DIR.exists()
+        assert _REAL_TEMPLATES_DIR.is_dir()
+
     def test_all_templates_parse(self) -> None:
         templates = list_templates(_REAL_TEMPLATES_DIR)
         assert len(templates) == 78
