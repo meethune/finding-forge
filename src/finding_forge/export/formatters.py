@@ -122,6 +122,12 @@ def export_markdown(finding: Finding) -> str:
     lines.append(finding.replication_steps)
     lines.append("")
 
+    if finding.evidence:
+        lines.append("## Evidence")
+        lines.append("")
+        for item in finding.evidence:
+            _render_evidence(item, lines)
+
     if finding.references:
         lines.append("## References")
         lines.append("")
@@ -134,12 +140,6 @@ def export_markdown(finding: Finding) -> str:
         lines.append("")
         lines.append(finding.detection)
         lines.append("")
-
-    if finding.evidence:
-        lines.append("## Evidence")
-        lines.append("")
-        for item in finding.evidence:
-            _render_evidence(item, lines)
 
     return "\n".join(lines)
 

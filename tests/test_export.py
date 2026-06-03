@@ -219,6 +219,30 @@ class TestExportMarkdown:
         assert "HTTP/1.1 200 OK" in md
         assert "<html>Welcome admin</html>" in md
 
+    def test_evidence_appears_after_replication_before_references(self) -> None:
+        finding = Finding(
+            title="Test",
+            description="Desc",
+            severity=FindingSeverity(rating="High"),
+            impact="Impact",
+            mitigation="Fix",
+            replication_steps="Steps",
+            references=["https://example.com"],
+            detection="Detect it",
+            evidence=[
+                Evidence(
+                    title="Proof",
+                    evidence_type="http",
+                )
+            ],
+        )
+        md = export_markdown(finding)
+        replication_pos = md.index("## Replication Steps")
+        evidence_pos = md.index("## Evidence")
+        references_pos = md.index("## References")
+        detection_pos = md.index("## Detection")
+        assert replication_pos < evidence_pos < references_pos < detection_pos
+
     def test_omits_evidence_section_when_empty(self, sample_finding: Finding) -> None:
         md = export_markdown(sample_finding)
         assert "## Evidence" not in md
