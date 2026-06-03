@@ -56,7 +56,8 @@ templates/library.py
 
 ## CLI Commands
 
-- `pentest-capture` — End-of-session evidence aggregation
+- `finding-forge capture` — End-of-session evidence aggregation
+- `finding-forge export` — Export a finding in any supported format
 - `finding-forge-mcp` — Start the MCP server
 
 ## Development Conventions

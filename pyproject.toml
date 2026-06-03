@@ -15,7 +15,6 @@ dependencies = [
 
 [project.scripts]
 finding-forge = "finding_forge.cli:forge"
-pentest-capture = "finding_forge.cli:capture"
 finding-forge-mcp = "finding_forge.server:main"
 
 [dependency-groups]

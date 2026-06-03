@@ -50,7 +50,7 @@ Once registered, the AI client has access to tools for Burp extraction, evidence
 
 ### Custom templates directory
 
-By default the server uses the bundled `templates/findings/` directory. To point at your own templates, set the `FINDING_FORGE_TEMPLATES_DIR` environment variable when registering:
+By default the server uses bundled templates packaged inside the wheel. To point at your own templates, set the `FINDING_FORGE_TEMPLATES_DIR` environment variable when registering:
 
 ```bash
 # IBM Bob
@@ -68,7 +68,7 @@ claude mcp add --scope user finding-forge \
 
 ```bash
 # Capture evidence from a testing session
-uv run pentest-capture --target https://app.example.com --engagement ENG-2025-042 --burp-xml burp_export.xml --output evidence.json
+uv run finding-forge capture --target https://app.example.com --engagement ENG-2025-042 --burp-xml burp_export.xml --output evidence.json
 
 # Export a finding
 uv run finding-forge export --finding finding.json --format markdown

@@ -27,6 +27,10 @@
 - 35 new tests (184 → 219) covering all security, robustness, and packaging fixes
 - Shared test fixtures consolidated in `conftest.py`
 
+### Removed
+
+- `pentest-capture` CLI entry point — use `finding-forge capture` instead
+
 ## 1.1.0 (2026-06-03)
 
 ### Added
