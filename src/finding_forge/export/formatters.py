@@ -93,11 +93,11 @@ def export_markdown(finding: Finding) -> str:
     lines: list[str] = []
     lines.append(f"# {finding.title}")
     lines.append("")
-    lines.append(f"**Severity:** {finding.severity.rating}")
+    lines.append(f"**Severity:** {finding.severity.rating}  ")
     if finding.severity.cvss_score is not None:
-        lines.append(f"**CVSS Score:** {finding.severity.cvss_score}")
+        lines.append(f"**CVSS Score:** {finding.severity.cvss_score}  ")
     if finding.severity.cvss_vector:
-        lines.append(f"**CVSS Vector:** {finding.severity.cvss_vector}")
+        lines.append(f"**CVSS Vector:** {finding.severity.cvss_vector}  ")
     if finding.cwe_ids:
         lines.append(f"**CWE:** {', '.join(finding.cwe_ids)}")
     lines.append("")

@@ -161,6 +161,11 @@ class TestExportMarkdown:
         assert "High" in md
         assert "9.1" in md
 
+    def test_severity_lines_have_hard_breaks(self, sample_finding: Finding) -> None:
+        md = export_markdown(sample_finding)
+        assert "**Severity:** High  \n" in md
+        assert "**CVSS Score:** 9.1  \n" in md
+
     def test_includes_all_sections(self, sample_finding: Finding) -> None:
         md = export_markdown(sample_finding)
         assert "## Description" in md
