@@ -132,6 +132,24 @@ class TestExportCsvRow:
         assert "CWE-89" in row["cwe_ids"]
         assert "cwe.mitre.org" in row["references"]
 
+    def test_includes_evidence_as_json(self, finding_with_evidence: Finding) -> None:
+        row = export_csv_row(finding_with_evidence)
+        assert "evidence" in row
+        parsed = json.loads(row["evidence"])
+        assert isinstance(parsed, list)
+        assert len(parsed) == 2
+
+    def test_evidence_preserves_structure(self, finding_with_evidence: Finding) -> None:
+        row = export_csv_row(finding_with_evidence)
+        parsed = json.loads(row["evidence"])
+        assert parsed[0]["title"] == "Burp Capture - Login Bypass"
+        assert parsed[0]["evidence_type"] == "http"
+        assert len(parsed[0]["requests"]) == 1
+
+    def test_evidence_empty_when_no_evidence(self, sample_finding: Finding) -> None:
+        row = export_csv_row(sample_finding)
+        assert row["evidence"] == "[]"
+
 
 class TestExportMarkdown:
     def test_includes_title_as_heading(self, sample_finding: Finding) -> None:

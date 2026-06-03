@@ -30,6 +30,7 @@ def export_csv_row(finding: Finding) -> dict[str, str]:
         "references": "; ".join(finding.references),
         "detection": finding.detection,
         "cwe_ids": "; ".join(finding.cwe_ids),
+        "evidence": json.dumps([e.model_dump(mode="json") for e in finding.evidence]),
     }
 
 
