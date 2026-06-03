@@ -48,8 +48,41 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
     server = FastMCP(
         "finding-forge",
         instructions=(
-            "Pentest evidence capture and finding drafting tools. "
-            "Use templates and evidence to draft security findings."
+            "Pentest finding generation from engagement artifacts. "
+            "Operators capture evidence during testing (Burp Suite "
+            "exports, screenshots, notes) and use these tools to "
+            "produce complete security findings.\n\n"
+            "## Tool Workflow\n\n"
+            "Tools chain together in this sequence:\n"
+            "1. `extract_burp` — parse Burp XML, filter to target "
+            "scope, returns structured HTTP request/response pairs\n"
+            "2. `match_finding_templates` — search 78 templates by "
+            "vulnerability type, returns ranked matches with severity "
+            "baselines, mitigation guidance, and references\n"
+            "3. `calculate_cvss` — compute CVSS 3.1 score from 8 "
+            "base metrics, returns vector string and numeric score\n"
+            "4. Draft the finding as JSON — combine evidence, "
+            "template baseline, and CVSS into the Finding schema\n"
+            "5. `validate_finding` — check the JSON against the "
+            "Finding schema, returns errors to fix\n"
+            "6. `export_finding` — render as markdown, CSV, JSON, "
+            "or Cervantes format for reporting platforms\n\n"
+            "## Prompts\n\n"
+            "- `forge` — zero-input automation: scans the operator's "
+            "artifacts directory, extracts evidence, identifies "
+            "findings, matches templates, drafts, validates, and "
+            "exports. The operator types /forge and gets finished "
+            "findings.\n"
+            "- `draft_finding` — focused single-finding drafting "
+            "from an evidence summary and optional template name.\n\n"
+            "## Evidence Integrity\n\n"
+            "- Evidence anchors all claims — never fabricate HTTP "
+            "requests, responses, endpoints, or screenshots\n"
+            "- CVSS scores must be computed via `calculate_cvss`, "
+            "never estimated\n"
+            "- Templates provide severity baselines and references, "
+            "not content to expand\n"
+            "- Operator notes are authoritative context"
         ),
     )
 
@@ -278,6 +311,137 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
                     "based on actual engagement context.\n\n"
                     f"## Evidence\n\n{evidence_summary}"
                     f"{template_context}"
+                ),
+            ),
+        ]
+
+    @server.prompt()
+    def forge() -> list[Message]:
+        """Scan artifacts directory and generate complete findings."""
+        return [
+            UserMessage(
+                content=(
+                    "You are a penetration test report automation "
+                    "system. Your job is to scan the operator's "
+                    "current working directory for engagement "
+                    "artifacts, extract evidence, and produce "
+                    "complete security findings with zero manual "
+                    "input.\n\n"
+                    "## Phase 1 — Discover Artifacts\n\n"
+                    "Scan the current working directory for:\n"
+                    "- `.xml` files — validate as Burp Suite exports "
+                    "by checking for `<items burpVersion=` in the "
+                    "first few lines\n"
+                    "- `.png`, `.jpg`, `.jpeg` files — screenshots "
+                    "(search subdirectories too)\n"
+                    "- `.md`, `.txt` files (excluding README files) "
+                    "— operator notes\n"
+                    "- `evidence.json` — pre-captured engagement "
+                    "sessions\n\n"
+                    "Infer the target host(s) by reading Burp XML "
+                    "host fields — use the most common in-scope "
+                    "host. Derive the engagement ID from the "
+                    "directory name.\n\n"
+                    "## Phase 2 — Extract and Analyze\n\n"
+                    "1. Call `extract_burp` for each Burp XML file "
+                    "with the inferred target host(s).\n"
+                    "2. Read all operator notes files — these are "
+                    "the primary source of truth. Operator notes "
+                    "contain severity assessments, business context, "
+                    "scope constraints, and chained impact analysis "
+                    "that Burp data alone cannot provide.\n"
+                    "3. Identify distinct vulnerability findings "
+                    "from the combined evidence. Each finding "
+                    "should map to a specific vulnerability with "
+                    "supporting Burp requests, screenshots, and "
+                    "operator observations.\n\n"
+                    "## Phase 3 — Generate Findings\n\n"
+                    "For each identified finding:\n\n"
+                    "1. Call `match_finding_templates` with a "
+                    "descriptive query for the vulnerability type. "
+                    "Select the best-matching template as a "
+                    "baseline.\n"
+                    "2. Reason through each of the 8 CVSS 3.1 base "
+                    "metrics (attack_vector, attack_complexity, "
+                    "privileges_required, user_interaction, scope, "
+                    "confidentiality, integrity, availability) based "
+                    "on the evidence. Then call `calculate_cvss` "
+                    "with those values.\n"
+                    "3. Draft the finding as a JSON object:\n"
+                    "```json\n"
+                    "{\n"
+                    '  "title": "string",\n'
+                    '  "description": "2-4 sentences",\n'
+                    '  "severity": {\n'
+                    '    "rating": "Critical|High|Medium|Low",\n'
+                    '    "cvss_vector": "from calculate_cvss",\n'
+                    '    "cvss_score": 0.0,\n'
+                    '    "justification": "1 sentence"\n'
+                    "  },\n"
+                    '  "impact": "2-3 sentences",\n'
+                    '  "mitigation": "from template + context",\n'
+                    '  "replication_steps": "from evidence",\n'
+                    '  "references": ["from template"],\n'
+                    '  "detection": "1-2 sentences",\n'
+                    '  "cwe_ids": ["from template"],\n'
+                    '  "evidence": [\n'
+                    "    {\n"
+                    '      "title": "string",\n'
+                    '      "evidence_type": "string",\n'
+                    '      "operator_notes": "string",\n'
+                    '      "screenshots": ["paths — use '
+                    '![title](path) syntax in markdown"],\n'
+                    '      "requests": [\n'
+                    "        {\n"
+                    '          "url": "string",\n'
+                    '          "method": "string",\n'
+                    '          "host": "string",\n'
+                    '          "path": "string",\n'
+                    '          "request_headers": {},\n'
+                    '          "request_body": "string or null",\n'
+                    '          "status_code": 200,\n'
+                    '          "response_headers": {},\n'
+                    '          "response_body": "string or null"\n'
+                    "        }\n"
+                    "      ]\n"
+                    "    }\n"
+                    "  ]\n"
+                    "}\n"
+                    "```\n"
+                    "4. Call `validate_finding` with the drafted "
+                    "JSON. If validation fails, fix the errors and "
+                    "re-validate.\n"
+                    "5. Call `export_finding` with `fmt=markdown` to "
+                    "render the final output.\n"
+                    "6. Write the markdown to "
+                    "`findings/<slugified-title>.md` and the JSON to "
+                    "`findings/<slugified-title>.json`. Create the "
+                    "`findings/` directory if it does not exist.\n\n"
+                    "## Phase 4 — Summary\n\n"
+                    "After all findings are generated, print a "
+                    "summary table with columns: Title, Severity, "
+                    "CVSS Score, Output File.\n\n"
+                    "## Evidence Integrity Rules (MANDATORY)\n\n"
+                    "1. Evidence anchors all claims — every "
+                    "statement in a finding MUST trace to provided "
+                    "evidence.\n"
+                    "2. NEVER fabricate HTTP requests, responses, "
+                    "endpoints, or URLs not present in the Burp "
+                    "data.\n"
+                    "3. NEVER reference screenshot files that do not "
+                    "exist on disk.\n"
+                    "4. CVSS scores MUST be computed via "
+                    "`calculate_cvss` — never estimate or copy from "
+                    "a template.\n"
+                    "5. Templates provide severity baselines and "
+                    "references — they are not content to expand or "
+                    "pad.\n"
+                    "6. Operator notes are authoritative — "
+                    "incorporate the operator's severity assessments, "
+                    "scope constraints, and impact analysis.\n"
+                    "7. If evidence is insufficient to support a "
+                    "claim, note the limitation rather than "
+                    "fabricating support.\n"
                 ),
             ),
         ]

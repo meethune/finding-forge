@@ -8,7 +8,7 @@ Initial release. Provider-agnostic MCP server for penetration test reporting aut
 
 - **8 tools**: `extract_burp`, `capture_evidence`, `list_finding_templates`, `get_finding_template`, `match_finding_templates`, `export_finding`, `calculate_cvss`, `validate_finding`
 - **1 resource template**: `templates://findings/{name}`
-- **1 prompt**: `draft_finding` — instructs any AI model to draft a finding as structured JSON
+- **2 prompts**: `forge` (zero-input full-pipeline automation), `draft_finding` (single-finding drafting)
 
 ### Template Library
 

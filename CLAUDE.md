@@ -51,7 +51,8 @@ templates/library.py
 
 ## MCP Prompts
 
-- `draft_finding` — Instructs any AI model to draft a complete finding from evidence and an optional template reference
+- `forge` — Zero-input automation: scans the operator's artifacts directory for Burp XML exports, screenshots, and operator notes, then extracts evidence, identifies findings, matches templates, drafts, validates, and exports. The operator types `/forge` and gets finished findings.
+- `draft_finding` — Focused single-finding drafting from an evidence summary and optional template name
 
 ## CLI Commands
 

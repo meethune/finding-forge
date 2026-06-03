@@ -443,3 +443,79 @@ class TestDraftFindingPrompt:
         assert '"evidence"' in all_text
         assert "screenshots" in all_text
         assert "operator_notes" in all_text
+
+
+class TestForgePrompt:
+    async def test_forge_prompt_registered(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        prompts = await server.list_prompts()
+        prompt_names = {p.name for p in prompts}
+        assert "forge" in prompt_names
+
+    async def test_forge_returns_messages_with_zero_args(
+        self, templates_dir: Path
+    ) -> None:
+        server = create_server(templates_dir)
+        result = await server.get_prompt("forge", {})
+        assert len(result.messages) > 0
+
+    async def test_forge_contains_tool_references(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        result = await server.get_prompt("forge", {})
+        text = " ".join(str(m.content) for m in result.messages)
+        for tool in [
+            "extract_burp",
+            "match_finding_templates",
+            "calculate_cvss",
+            "validate_finding",
+            "export_finding",
+        ]:
+            assert tool in text, f"forge prompt missing reference to {tool}"
+
+    async def test_forge_contains_integrity_rules(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        result = await server.get_prompt("forge", {})
+        text = " ".join(str(m.content) for m in result.messages)
+        assert "fabricate" in text.lower()
+        assert "evidence" in text.lower()
+
+    async def test_forge_contains_artifact_patterns(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        result = await server.get_prompt("forge", {})
+        text = " ".join(str(m.content) for m in result.messages)
+        assert ".xml" in text
+        assert ".png" in text
+        assert ".md" in text
+
+    async def test_forge_instructs_image_syntax(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        result = await server.get_prompt("forge", {})
+        text = " ".join(str(m.content) for m in result.messages)
+        assert "![" in text
+
+
+class TestServerInstructions:
+    def test_instructions_describe_workflow(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        instructions = server._mcp_server.instructions or ""
+        for tool in [
+            "extract_burp",
+            "match_finding_templates",
+            "calculate_cvss",
+            "validate_finding",
+            "export_finding",
+        ]:
+            assert tool in instructions, f"instructions missing {tool}"
+
+    def test_instructions_mention_forge_prompt(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        instructions = server._mcp_server.instructions or ""
+        assert "forge" in instructions.lower()
+
+    def test_instructions_are_provider_agnostic(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        instructions = server._mcp_server.instructions or ""
+        for term in ["Claude", "Anthropic", "GPT", "OpenAI"]:
+            assert term not in instructions, (
+                f"instructions contain provider-specific term: {term}"
+            )

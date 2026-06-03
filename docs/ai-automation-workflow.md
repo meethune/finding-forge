@@ -185,7 +185,9 @@ The script:
 
 ### Step 3: Finding Drafting (AI-Assisted)
 
-Operator reviews structured evidence:
+**Automated (recommended):** The operator invokes `/forge` from the artifacts directory. The AI handles evidence extraction, template matching, CVSS scoring, drafting, validation, and export autonomously.
+
+**Manual:** Operator reviews structured evidence and chains MCP tools individually:
 
 ```bash
 pentest-draft --evidence evidence.json --template-library ./templates/
@@ -502,13 +504,14 @@ Each template includes:
 
 ---
 
-### Phase 3: Full Automation Pipeline (Week 4)
+### Phase 3: Full Automation Pipeline (Week 4) ✅ IMPLEMENTED
+
 **Goal:** One command from testing to draft findings.
 
-**What to build:**
-- `pentest-capture` command (Burp + screenshots + conversational notes → evidence.json)
-- `pentest-draft` command (evidence.json + templates → formatted findings)
-- Export to multiple formats (CSV, JSON, Markdown, DOCX)
+**What was built:**
+- `forge` MCP prompt — zero-input automation. The operator navigates to an artifacts directory and invokes `/forge`. The AI scans for Burp XML exports, screenshots, and operator notes, then extracts evidence, matches templates, calculates CVSS, drafts findings, validates, and exports to markdown and JSON.
+- `pentest-capture` CLI command (Burp + screenshots + conversational notes → evidence.json)
+- Export to multiple formats (CSV, JSON, Markdown, Cervantes CSV)
 
 **Success metric:** 10 findings drafted in 1 hour (vs 5+ hours manual)
 

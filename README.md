@@ -43,7 +43,10 @@ claude mcp add --scope user finding-forge -- \
 }
 ```
 
-Once registered, the AI client has access to tools for Burp extraction, evidence capture, template matching, and finding export — plus a `draft_finding` prompt for AI-assisted drafting.
+Once registered, the AI client has access to tools for Burp extraction, evidence capture, template matching, and finding export — plus two prompts:
+
+- **`/forge`** — zero-input automation. The operator navigates to an artifacts directory and types `/forge`. The AI scans for Burp XML exports, screenshots, and operator notes, then extracts evidence, matches templates, drafts findings, validates, and exports — all without manual tool chaining.
+- **`/draft_finding`** — focused single-finding drafting from an evidence summary and optional template name.
 
 ### Custom templates directory
 
