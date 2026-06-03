@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- **Path traversal prevention** — `get_template` validates template names against directory escape via path separators and `is_relative_to` containment check
+- **XML entity expansion blocked** — replaced `xml.etree.ElementTree` with `defusedxml.ElementTree` in Burp XML parser; added `defusedxml>=0.7` dependency
+- **CSV formula injection sanitized** — `_escape_cervantes` prefixes formula trigger characters (`=`, `+`, `-`, `@`, tab, CR) with single quote; CVSS vector field now goes through escaping
+- **Severity rating validation** — `FindingSeverity.rating` normalizes case (`"critical"` → `"Critical"`, `"info"` → `"Informational"`) and rejects unknown values
+
+### Fixed
+
+- Corrupt base64 in Burp XML no longer crashes the entire parser — falls back to raw text
+- Non-numeric `<status>` values in Burp XML handled gracefully (defaults to 0)
+- Single malformed template file no longer prevents loading all templates — skipped with warning
+- Empty YAML frontmatter raises clear `ValueError` instead of `AttributeError`
+- HTTP response reason phrase uses `http.HTTPStatus` instead of hardcoded `"OK"` (e.g., 404 now renders `"Not Found"`)
+- Version string in `__init__.py` corrected from `1.0.0` to `1.1.0`
+- Bundled templates packaged inside the wheel via `importlib.resources` — resolves correctly in editable installs, wheels, and zipapps (#1)
+- `scripts/import_templates.py` output path updated to `src/finding_forge/templates/findings/`
+- Template path warning logged when bundled directory is missing and no override is set
+
+### Added
+
+- `finding-forge` CLI entry point exposing full Click group (capture + export + --version)
+- 35 new tests (184 → 219) covering all security, robustness, and packaging fixes
+- Shared test fixtures consolidated in `conftest.py`
+
 ## 1.1.0 (2026-06-03)
 
 ### Added
