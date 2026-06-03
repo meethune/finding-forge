@@ -2,8 +2,9 @@
 
 import json
 from collections.abc import Callable
+from pathlib import PurePosixPath
 
-from finding_forge.models.schemas import Finding
+from finding_forge.models.schemas import Evidence, Finding
 
 
 def export_json(finding: Finding) -> str:
@@ -31,6 +32,51 @@ def export_csv_row(finding: Finding) -> dict[str, str]:
         "detection": finding.detection,
         "cwe_ids": "; ".join(finding.cwe_ids),
     }
+
+
+def _render_evidence(evidence: Evidence, lines: list[str]) -> None:
+    """Render a single evidence item as Markdown subsections."""
+    lines.append(f"### {evidence.title}")
+    lines.append("")
+    lines.append(f"**Type:** {evidence.evidence_type}")
+    lines.append("")
+
+    if evidence.operator_notes:
+        lines.append(evidence.operator_notes)
+        lines.append("")
+
+    if evidence.screenshots:
+        lines.append("**Screenshots:**")
+        lines.append("")
+        for screenshot in evidence.screenshots:
+            alt = PurePosixPath(screenshot).name
+            lines.append(f"![{alt}]({screenshot})")
+        lines.append("")
+
+    if evidence.scanner_findings:
+        lines.append("**Scanner Findings:**")
+        lines.append("")
+        for finding_text in evidence.scanner_findings:
+            lines.append(f"- {finding_text}")
+        lines.append("")
+
+    for req in evidence.requests:
+        lines.append(f"**{req.method} {req.url}**")
+        lines.append("")
+        if req.request_body:
+            lines.append("Request body:")
+            lines.append("")
+            lines.append("```")
+            lines.append(req.request_body)
+            lines.append("```")
+            lines.append("")
+        lines.append(f"Response ({req.status_code}):")
+        lines.append("")
+        if req.response_body:
+            lines.append("```")
+            lines.append(req.response_body)
+            lines.append("```")
+            lines.append("")
 
 
 def export_markdown(finding: Finding) -> str:
@@ -79,6 +125,12 @@ def export_markdown(finding: Finding) -> str:
         lines.append("")
         lines.append(finding.detection)
         lines.append("")
+
+    if finding.evidence:
+        lines.append("## Evidence")
+        lines.append("")
+        for item in finding.evidence:
+            _render_evidence(item, lines)
 
     return "\n".join(lines)
 

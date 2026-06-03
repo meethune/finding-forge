@@ -11,7 +11,12 @@ from finding_forge.export.formatters import (
     export_json,
     export_markdown,
 )
-from finding_forge.models.schemas import Finding, FindingSeverity
+from finding_forge.models.schemas import (
+    BurpRequest,
+    Evidence,
+    Finding,
+    FindingSeverity,
+)
 
 
 @pytest.fixture()
@@ -34,6 +39,50 @@ def sample_finding() -> Finding:
         ],
         detection="Monitor database logs for anomalous queries.",
         cwe_ids=["CWE-89"],
+    )
+
+
+@pytest.fixture()
+def finding_with_evidence() -> Finding:
+    return Finding(
+        title="SQL Injection in Login Form",
+        description="The login form is vulnerable to SQL injection.",
+        severity=FindingSeverity(rating="High", cvss_score=9.1),
+        impact="An attacker can extract all database contents.",
+        mitigation="Use parameterized queries.",
+        replication_steps="1. Navigate to /login\n2. Enter ' OR 1=1--",
+        evidence=[
+            Evidence(
+                title="Burp Capture - Login Bypass",
+                evidence_type="http",
+                operator_notes="Confirmed bypass with admin privileges.",
+                screenshots=["screenshots/sqli_login.png"],
+                scanner_findings=["SQLi detected by Burp Scanner"],
+                requests=[
+                    BurpRequest(
+                        url="https://target.example.com/login",
+                        method="POST",
+                        host="target.example.com",
+                        path="/login",
+                        request_headers={
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        request_body="user=admin&pass=' OR 1=1--",
+                        status_code=200,
+                        response_headers={"Content-Type": "text/html"},
+                        response_body="<html>Welcome admin</html>",
+                    ),
+                ],
+            ),
+            Evidence(
+                title="Screenshot - Admin Dashboard",
+                evidence_type="screenshot",
+                screenshots=[
+                    "screenshots/admin_dashboard.png",
+                    "screenshots/admin_users.png",
+                ],
+            ),
+        ],
     )
 
 
@@ -106,6 +155,49 @@ class TestExportMarkdown:
         md = export_markdown(sample_finding)
         assert "## Detection" in md
         assert "database logs" in md
+
+    def test_includes_evidence_section(self, finding_with_evidence: Finding) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "## Evidence" in md
+
+    def test_includes_evidence_title(self, finding_with_evidence: Finding) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "### Burp Capture - Login Bypass" in md
+        assert "### Screenshot - Admin Dashboard" in md
+
+    def test_includes_evidence_type(self, finding_with_evidence: Finding) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "**Type:** http" in md
+
+    def test_includes_operator_notes(self, finding_with_evidence: Finding) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "Confirmed bypass with admin privileges." in md
+
+    def test_renders_screenshots_as_images(
+        self, finding_with_evidence: Finding
+    ) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "![sqli_login.png](screenshots/sqli_login.png)" in md
+        assert "![admin_dashboard.png](screenshots/admin_dashboard.png)" in md
+
+    def test_includes_scanner_findings(self, finding_with_evidence: Finding) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "SQLi detected by Burp Scanner" in md
+
+    def test_includes_request_details(self, finding_with_evidence: Finding) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "POST" in md
+        assert "https://target.example.com/login" in md
+        assert "user=admin&pass=' OR 1=1--" in md
+
+    def test_includes_response_details(self, finding_with_evidence: Finding) -> None:
+        md = export_markdown(finding_with_evidence)
+        assert "200" in md
+        assert "<html>Welcome admin</html>" in md
+
+    def test_omits_evidence_section_when_empty(self, sample_finding: Finding) -> None:
+        md = export_markdown(sample_finding)
+        assert "## Evidence" not in md
 
     def test_omits_detection_when_empty(self) -> None:
         finding = Finding(
