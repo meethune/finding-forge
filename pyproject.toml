@@ -1,6 +1,6 @@
 [project]
 name = "finding-forge"
-version = "1.0.0"
+version = "1.1.0"
 description = "MCP server for pen test evidence capture and finding drafting"
 readme = "README.md"
 requires-python = ">=3.12"
