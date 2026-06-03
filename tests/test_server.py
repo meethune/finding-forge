@@ -345,6 +345,64 @@ class TestExportFindingTool:
         text = content[0].text  # type: ignore[union-attr]
         assert "# Test Finding" in text
 
+    async def test_exports_markdown_with_evidence(self, templates_dir: Path) -> None:
+        finding_data = {
+            "title": "XSS in Search",
+            "description": "Reflected XSS.",
+            "severity": {"rating": "High"},
+            "impact": "Session hijacking.",
+            "mitigation": "Encode output.",
+            "replication_steps": "1. Enter payload",
+            "evidence": [
+                {
+                    "title": "XSS Alert Box",
+                    "evidence_type": "screenshot",
+                    "operator_notes": "Alert triggered in search field",
+                    "screenshots": ["screenshots/xss-alert.png"],
+                },
+                {
+                    "title": "Malicious Request",
+                    "evidence_type": "http_request",
+                    "requests": [
+                        {
+                            "url": "https://target.com/search?q=<script>alert(1)</script>",
+                            "method": "GET",
+                            "host": "target.com",
+                            "path": "/search?q=<script>alert(1)</script>",
+                            "request_headers": {"Host": "target.com"},
+                            "status_code": 200,
+                            "response_headers": {"Content-Type": "text/html"},
+                            "response_body": (
+                                "<p>Results for: <script>alert(1)</script></p>"
+                            ),
+                        }
+                    ],
+                },
+            ],
+        }
+        server = create_server(templates_dir)
+        result = await server.call_tool(
+            "export_finding",
+            {"finding_json": json.dumps(finding_data), "fmt": "markdown"},
+        )
+        content, _is_error = result
+        text = content[0].text  # type: ignore[union-attr]
+        assert "![XSS Alert Box](screenshots/xss-alert.png)" in text
+        assert "Alert triggered in search field" in text
+        assert "GET /search?q=<script>alert(1)</script> HTTP/1.1" in text
+        assert "<p>Results for: <script>alert(1)</script></p>" in text
+
+    async def test_export_finding_docstring_documents_evidence_fields(
+        self, templates_dir: Path
+    ) -> None:
+        server = create_server(templates_dir)
+        tools = await server.list_tools()
+        export_tool = next(t for t in tools if t.name == "export_finding")
+        desc = export_tool.description or ""
+        assert "screenshots" in desc
+        assert "operator_notes" in desc
+        assert "requests" in desc
+
 
 class TestDraftFindingPrompt:
     async def test_returns_messages(self, templates_dir: Path) -> None:
@@ -374,3 +432,14 @@ class TestDraftFindingPrompt:
             {"evidence_summary": "Found a vulnerability"},
         )
         assert len(result.messages) > 0
+
+    async def test_output_schema_includes_evidence(self, templates_dir: Path) -> None:
+        server = create_server(templates_dir)
+        result = await server.get_prompt(
+            "draft_finding",
+            {"evidence_summary": "XSS found"},
+        )
+        all_text = " ".join(str(m.content) for m in result.messages)
+        assert '"evidence"' in all_text
+        assert "screenshots" in all_text
+        assert "operator_notes" in all_text

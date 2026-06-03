@@ -114,7 +114,16 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
           references (list[str], optional)
           detection (str, optional)
           cwe_ids (list[str], optional)
-          evidence (list[{title, evidence_type}], optional)
+          evidence (list[object], optional) — each object:
+            title (str)
+            evidence_type (str)
+            operator_notes (str, optional)
+            screenshots (list[str], optional) — file paths or URLs
+            scanner_findings (list[str], optional)
+            requests (list[object], optional) — each object:
+              url, method, host, path, request_headers (dict),
+              request_body (str?), status_code (int),
+              response_headers (dict), response_body (str?)
 
         fmt: "json", "csv", "markdown", or "cervantes"
         """
@@ -228,7 +237,28 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
                     '  "replication_steps": "from evidence",\n'
                     '  "references": ["urls"],\n'
                     '  "detection": "1-2 sentences",\n'
-                    '  "cwe_ids": ["CWE-XX"]\n'
+                    '  "cwe_ids": ["CWE-XX"],\n'
+                    '  "evidence": [\n'
+                    "    {\n"
+                    '      "title": "string",\n'
+                    '      "evidence_type": "screenshot|http_request|other",\n'
+                    '      "operator_notes": "string",\n'
+                    '      "screenshots": ["file paths or URLs"],\n'
+                    '      "requests": [\n'
+                    "        {\n"
+                    '          "url": "string",\n'
+                    '          "method": "GET|POST|...",\n'
+                    '          "host": "string",\n'
+                    '          "path": "string",\n'
+                    '          "request_headers": {},\n'
+                    '          "request_body": "string or null",\n'
+                    '          "status_code": 200,\n'
+                    '          "response_headers": {},\n'
+                    '          "response_body": "string or null"\n'
+                    "        }\n"
+                    "      ]\n"
+                    "    }\n"
+                    "  ]\n"
                     "}\n"
                     "```\n\n"
                     "Use the `calculate_cvss` tool to get the "
