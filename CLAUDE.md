@@ -70,7 +70,9 @@ templates/library.py
 - **CVSS auto-compute**: `FindingSeverity` has a `model_validator(mode="after")` that computes `cvss_score` from `cvss_vector` when vector is present but score is missing. Uses the `cvss` library (RedHat).
 - **Export format aliases**: `export_finding` accepts aliases (`md`→`markdown`, `cervantes-csv`→`cervantes`) via `_FORMAT_DISPATCH` dict in `formatters.py`.
 - **Model inheritance**: `Finding` and `FindingTemplate` share a `_FindingBase` with 9 common fields. `Finding` adds `evidence`; `FindingTemplate` adds `name`, `tags`, `finding_type`, `guidance`.
+- **Feature work**: Always use feature branches (`feat/`, `fix/`) with PRs. Never commit feature work directly to main.
 - **Python >=3.12**, managed with `uv`
+- **uv cache**: If `uv sync` fails with cache permission errors, use `UV_CACHE_DIR=/private/tmp/claude-501/uv-cache uv sync`
 - **Formatting**: `ruff format` (black-compatible)
 - **Linting**: `ruff check`
 - **Type checking**: `mypy --strict`
@@ -79,6 +81,7 @@ templates/library.py
 - **MCP server**: Official `mcp` Python SDK (FastMCP)
 - **Secrets**: 1Password CLI (`op read`). Never hardcode API keys.
 - **Commits**: Conventional Commits specification
+- **Third-party type stubs**: When adding untyped dependencies, add `[[tool.mypy.overrides]]` with `ignore_missing_imports = true` in `pyproject.toml` (see existing entries for `cvss`, `defusedxml`, `libnmap`)
 
 ## Findings Template Library
 
