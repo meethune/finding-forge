@@ -43,9 +43,9 @@ claude mcp add --scope user finding-forge -- \
 }
 ```
 
-Once registered, the AI client has access to tools for Burp extraction, evidence capture, template matching, and finding export — plus two prompts:
+Once registered, the AI client has access to tools for Burp extraction, nmap parsing, evidence capture, template matching, and finding export — plus two prompts:
 
-- **`/forge`** — zero-input automation. The operator navigates to an artifacts directory and types `/forge`. The AI scans for Burp XML exports, screenshots, and operator notes, then extracts evidence, matches templates, drafts findings, validates, and exports — all without manual tool chaining.
+- **`/forge`** — zero-input automation. The operator navigates to an artifacts directory and types `/forge`. The AI scans for Burp XML exports, nmap scan output, screenshots, and operator notes, then extracts evidence, matches templates, drafts findings, validates, and exports — all without manual tool chaining.
 - **`/draft_finding`** — focused single-finding drafting from an evidence summary and optional template name.
 
 ### Custom templates directory
@@ -79,6 +79,7 @@ uv run finding-forge export --finding finding.json --format markdown
 | Tool | Description |
 |------|-------------|
 | `extract_burp` | Parse Burp Suite XML export, filter to target scope |
+| `extract_nmap` | Parse nmap XML output, filter to target scope |
 | `capture_evidence` | Create an engagement session with evidence |
 | `list_finding_templates` | List all available finding templates |
 | `get_finding_template` | Get a specific template by name |
@@ -104,6 +105,7 @@ Core Library (pure Python)          Wrappers
 ──────────────────────────────    ─────────────────
 models/schemas.py                 server.py (MCP)
 burp/extract.py                   cli.py (Click)
+nmap/extract.py
 evidence/capture.py
 export/formatters.py
 templates/library.py
