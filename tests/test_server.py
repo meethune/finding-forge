@@ -115,6 +115,7 @@ class TestServerToolsRegistered:
         assert "export_finding" in tool_names
         assert "calculate_cvss" in tool_names
         assert "validate_finding" in tool_names
+        assert "extract_nmap" in tool_names
 
 
 class TestValidateFindingTool:
@@ -208,6 +209,50 @@ class TestExtractBurpTool:
         data = json.loads(text)
         assert len(data) == 1
         assert data[0]["host"] == "app.example.com"
+
+
+class TestExtractNmapTool:
+    async def test_extracts_nmap_data(
+        self, templates_dir: Path, tmp_path: Path
+    ) -> None:
+        nmap_xml = tmp_path / "scan.xml"
+        nmap_xml.write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<nmaprun scanner="nmap" args="nmap -sV 10.0.0.1"'
+            ' start="1717632000" startstr="Mon Jun  3 12:00:00 2026"'
+            ' version="7.94" xmloutputversion="1.05">\n'
+            '<host starttime="1717632001" endtime="1717632010">\n'
+            '  <status state="up" reason="syn-ack"/>\n'
+            '  <address addr="10.0.0.1" addrtype="ipv4"/>\n'
+            "  <hostnames/>\n"
+            "  <ports>\n"
+            '    <port protocol="tcp" portid="22">'
+            '<state state="open" reason="syn-ack"/>'
+            '<service name="ssh" product="OpenSSH" version="8.9p1"'
+            ' method="probed" conf="10"/></port>\n'
+            "  </ports>\n"
+            "</host>\n"
+            "<runstats>"
+            '<finished time="1717632020" elapsed="20"/>'
+            '<hosts up="1" down="0" total="1"/>'
+            "</runstats>\n"
+            "</nmaprun>\n"
+        )
+        server = create_server(templates_dir)
+        result = await server.call_tool(
+            "extract_nmap",
+            {
+                "xml_path": str(nmap_xml),
+                "target_hosts": ["10.0.0.1"],
+            },
+        )
+        content, _is_error = result
+        text = content[0].text  # type: ignore[index,union-attr]
+        data = json.loads(text)
+        assert len(data) == 1
+        assert data[0]["host"] == "10.0.0.1"
+        assert data[0]["port"] == 22
+        assert data[0]["service"] == "ssh"
 
 
 class TestListFindingTemplatesTool:

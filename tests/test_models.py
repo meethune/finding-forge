@@ -12,6 +12,8 @@ from finding_forge.models.schemas import (
     Finding,
     FindingSeverity,
     FindingTemplate,
+    NmapScriptResult,
+    NmapService,
 )
 
 
@@ -339,3 +341,74 @@ class TestFindingTemplate:
         data = tmpl.model_dump(mode="json")
         reconstructed = FindingTemplate.model_validate(data)
         assert reconstructed == tmpl
+
+
+class TestNmapScriptResult:
+    def test_construction(self) -> None:
+        script = NmapScriptResult(script_id="http-title", output="Test Page")
+        assert script.script_id == "http-title"
+        assert script.output == "Test Page"
+
+    def test_serialization_roundtrip(self) -> None:
+        script = NmapScriptResult(
+            script_id="ssl-cert", output="Subject: CN=example.com"
+        )
+        data = script.model_dump(mode="json")
+        reconstructed = NmapScriptResult.model_validate(data)
+        assert reconstructed == script
+
+
+class TestNmapService:
+    def test_minimal_construction(self) -> None:
+        svc = NmapService(
+            host="10.0.0.1",
+            hostname="",
+            port=22,
+            protocol="tcp",
+            state="open",
+            service="ssh",
+            version="",
+            os_match="",
+        )
+        assert svc.host == "10.0.0.1"
+        assert svc.port == 22
+        assert svc.scripts == []
+
+    def test_full_construction(self) -> None:
+        svc = NmapService(
+            host="10.0.0.1",
+            hostname="web.example.com",
+            port=443,
+            protocol="tcp",
+            state="open",
+            service="https",
+            version="Apache httpd 2.4.52",
+            os_match="Linux 5.4",
+            scripts=[
+                NmapScriptResult(
+                    script_id="ssl-cert",
+                    output="Subject: CN=web.example.com",
+                ),
+            ],
+        )
+        assert svc.hostname == "web.example.com"
+        assert svc.version == "Apache httpd 2.4.52"
+        assert svc.os_match == "Linux 5.4"
+        assert len(svc.scripts) == 1
+        assert svc.scripts[0].script_id == "ssl-cert"
+
+    def test_serialization_roundtrip(self) -> None:
+        svc = NmapService(
+            host="10.0.0.1",
+            hostname="web.example.com",
+            port=80,
+            protocol="tcp",
+            state="open",
+            service="http",
+            version="Apache httpd 2.4.52",
+            os_match="Linux 5.4",
+            scripts=[NmapScriptResult(script_id="http-title", output="Test")],
+        )
+        data = svc.model_dump(mode="json")
+        reconstructed = NmapService.model_validate(data)
+        assert reconstructed == svc

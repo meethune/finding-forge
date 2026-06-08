@@ -18,6 +18,7 @@ from finding_forge.cvss.calculator import (
 from finding_forge.evidence.capture import add_evidence, create_session
 from finding_forge.export.formatters import export_finding as _export_finding
 from finding_forge.models.schemas import Finding
+from finding_forge.nmap.extract import extract_nmap_data
 from finding_forge.templates.library import (
     get_template,
     list_templates,
@@ -61,12 +62,14 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
         instructions=(
             "Pentest finding generation from engagement artifacts. "
             "Operators capture evidence during testing (Burp Suite "
-            "exports, screenshots, notes) and use these tools to "
-            "produce complete security findings.\n\n"
+            "exports, nmap scans, screenshots, notes) and use these "
+            "tools to produce complete security findings.\n\n"
             "## Tool Workflow\n\n"
             "Tools chain together in this sequence:\n"
             "1. `extract_burp` — parse Burp XML, filter to target "
             "scope, returns structured HTTP request/response pairs\n"
+            "1b. `extract_nmap` — parse nmap XML, filter to target "
+            "scope, returns structured host/port/service data\n"
             "2. `match_finding_templates` — search 78 templates by "
             "vulnerability type, returns ranked matches with severity "
             "baselines, mitigation guidance, and references\n"
@@ -101,6 +104,12 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
     def extract_burp(xml_path: str, target_hosts: list[str]) -> str:
         """Parse Burp XML export, filter to target scope."""
         results = extract_burp_data(Path(xml_path), target_hosts)
+        return _dump_models(results)
+
+    @server.tool()
+    def extract_nmap(xml_path: str, target_hosts: list[str]) -> str:
+        """Parse nmap XML output, filter to target scope."""
+        results = extract_nmap_data(Path(xml_path), target_hosts)
         return _dump_models(results)
 
     @server.tool()
@@ -340,9 +349,11 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
                     "input.\n\n"
                     "## Phase 1 — Discover Artifacts\n\n"
                     "Scan the current working directory for:\n"
-                    "- `.xml` files — validate as Burp Suite exports "
-                    "by checking for `<items burpVersion=` in the "
-                    "first few lines\n"
+                    "- `.xml` files — classify by content:\n"
+                    "  - Burp Suite exports: check for "
+                    "`<items burpVersion=` in the first few lines\n"
+                    "  - Nmap scan output: check for "
+                    "`<nmaprun scanner=` in the first few lines\n"
                     "- `.png`, `.jpg`, `.jpeg` files — screenshots "
                     "(search subdirectories too)\n"
                     "- `.md`, `.txt` files (excluding README files) "
@@ -350,12 +361,16 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
                     "- `evidence.json` — pre-captured engagement "
                     "sessions\n\n"
                     "Infer the target host(s) by reading Burp XML "
-                    "host fields — use the most common in-scope "
-                    "host. Derive the engagement ID from the "
-                    "directory name.\n\n"
+                    "host fields or nmap XML address fields — use "
+                    "the most common in-scope host. Derive the "
+                    "engagement ID from the directory name.\n\n"
                     "## Phase 2 — Extract and Analyze\n\n"
                     "1. Call `extract_burp` for each Burp XML file "
                     "with the inferred target host(s).\n"
+                    "1b. Call `extract_nmap` for each nmap XML file "
+                    "with the inferred target host(s). Nmap data "
+                    "reveals open ports, service versions, and OS "
+                    "fingerprints that inform findings.\n"
                     "2. Read all operator notes files — these are "
                     "the primary source of truth. Operator notes "
                     "contain severity assessments, business context, "
@@ -454,8 +469,8 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
                     "statement in a finding MUST trace to provided "
                     "evidence.\n"
                     "2. NEVER fabricate HTTP requests, responses, "
-                    "endpoints, or URLs not present in the Burp "
-                    "data.\n"
+                    "endpoints, URLs, or service details not "
+                    "present in the Burp or nmap data.\n"
                     "3. NEVER reference screenshot files that do not "
                     "exist on disk.\n"
                     "4. CVSS scores MUST be computed via "

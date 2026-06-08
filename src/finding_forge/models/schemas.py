@@ -22,6 +22,27 @@ class BurpRequest(BaseModel):
     flags: list[str] = Field(default_factory=list)
 
 
+class NmapScriptResult(BaseModel):
+    """A single NSE script result from an nmap scan."""
+
+    script_id: str
+    output: str
+
+
+class NmapService(BaseModel):
+    """A single service detected on a host:port by nmap."""
+
+    host: str
+    hostname: str
+    port: int
+    protocol: str
+    state: str
+    service: str
+    version: str
+    os_match: str
+    scripts: list[NmapScriptResult] = Field(default_factory=list)
+
+
 class Evidence(BaseModel):
     """A single piece of evidence captured during testing."""
 

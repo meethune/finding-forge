@@ -11,6 +11,7 @@ dependencies = [
     "pyyaml>=6.0",
     "cvss>=3.4",
     "defusedxml>=0.7",
+    "python-libnmap>=0.7",
 ]
 
 [project.scripts]
@@ -54,6 +55,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "defusedxml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "libnmap.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

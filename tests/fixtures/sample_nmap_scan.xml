@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" args="nmap -sV -O -sC 10.0.0.1 10.0.0.2" start="1717632000" startstr="Mon Jun  3 12:00:00 2026" version="7.94" xmloutputversion="1.05">
+<host starttime="1717632001" endtime="1717632010">
+  <status state="up" reason="syn-ack"/>
+  <address addr="10.0.0.1" addrtype="ipv4"/>
+  <hostnames><hostname name="web.example.com" type="PTR"/></hostnames>
+  <ports>
+    <port protocol="tcp" portid="22"><state state="open" reason="syn-ack"/><service name="ssh" product="OpenSSH" version="8.9p1" extrainfo="Ubuntu" method="probed" conf="10"/></port>
+    <port protocol="tcp" portid="80"><state state="open" reason="syn-ack"/><service name="http" product="Apache httpd" version="2.4.52" method="probed" conf="10"/><script id="http-title" output="Test Page"/></port>
+    <port protocol="tcp" portid="443"><state state="open" reason="syn-ack"/><service name="https" product="Apache httpd" version="2.4.52" tunnel="ssl" method="probed" conf="10"/><script id="ssl-cert" output="Subject: CN=web.example.com"/></port>
+    <port protocol="tcp" portid="3306"><state state="filtered" reason="no-response"/><service name="mysql" method="table" conf="3"/></port>
+  </ports>
+  <os><osmatch name="Linux 5.4" accuracy="95" line="1234"><osclass type="general purpose" vendor="Linux" osfamily="Linux" osgen="5.X" accuracy="95"/></osmatch></os>
+</host>
+<host starttime="1717632001" endtime="1717632010">
+  <status state="up" reason="syn-ack"/>
+  <address addr="10.0.0.2" addrtype="ipv4"/>
+  <hostnames/>
+  <ports>
+    <port protocol="tcp" portid="22"><state state="open" reason="syn-ack"/><service name="ssh" product="OpenSSH" version="7.6p1" method="probed" conf="10"/></port>
+    <port protocol="tcp" portid="8080"><state state="open" reason="syn-ack"/><service name="http-proxy" product="Squid" version="4.13" method="probed" conf="10"/></port>
+  </ports>
+</host>
+<runstats><finished time="1717632020" elapsed="20"/><hosts up="2" down="0" total="2"/></runstats>
+</nmaprun>

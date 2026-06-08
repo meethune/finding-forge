@@ -338,6 +338,7 @@ dependencies = [
     { name = "defusedxml" },
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
+    { name = "python-libnmap" },
     { name = "pyyaml" },
 ]
 
@@ -358,6 +359,7 @@ requires-dist = [
     { name = "defusedxml", specifier = ">=0.7" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.20" },
     { name = "pydantic", specifier = ">=2.0" },
+    { name = "python-libnmap", specifier = ">=0.7" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]
 
@@ -841,6 +843,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
 ]
+
+[[package]]
+name = "python-libnmap"
+version = "0.7.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/b2/38e34576a715115e5bef9eff7d9989d48079c8138e5bb1d71bb8001df722/python-libnmap-0.7.3.tar.gz", hash = "sha256:d03629256c2ee9ab37390c28d4c4c2ae9637cd0861dd8ab9e0f32779545936c0", size = 39687, upload-time = "2022-09-01T21:39:29.515Z" }
 
 [[package]]
 name = "python-multipart"

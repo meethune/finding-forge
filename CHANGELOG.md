@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `extract_nmap` MCP tool — parses nmap XML output via `python-libnmap`, returns per-service results with host, port, protocol, state, service name, version banner, OS match, and NSE script output, filtered to target scope
+- `NmapService` and `NmapScriptResult` Pydantic models for structured nmap data
+- `python-libnmap>=0.7` dependency (uses `defusedxml` internally)
+
 ## 1.1.1 (2026-06-03)
 
 ### Security

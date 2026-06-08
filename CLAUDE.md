@@ -17,6 +17,7 @@ Core Library                          Wrappers
 ──────────────────────────────    ─────────────────────────
 models/schemas.py (Pydantic)      server.py  (MCP server)
 burp/extract.py                   cli.py     (Click CLI)
+nmap/extract.py
 evidence/capture.py
 export/formatters.py
 templates/library.py
@@ -24,19 +25,22 @@ templates/library.py
 
 1. **Burp Extraction** (`finding_forge.burp`) — Parses Burp Suite proxy history XML exports, filters to target scope, extracts requests/responses.
 
-2. **Evidence Capture** (`finding_forge.evidence`) — Aggregates Burp data, screenshots, and operator notes into a structured EngagementSession (JSON).
+2. **Nmap Extraction** (`finding_forge.nmap`) — Parses nmap XML scan output via `python-libnmap`, filters to target scope, extracts per-service results with NSE script output.
 
-3. **Template Library** (`finding_forge.templates`) — Loads, lists, and matches finding templates from bundled Markdown files with YAML frontmatter. Templates are packaged inside the wheel at `finding_forge/templates/findings/` and resolved via `importlib.resources`. Custom template directories can override via `FINDING_FORGE_TEMPLATES_DIR` env var or `create_server(templates_dir=...)`.
+3. **Evidence Capture** (`finding_forge.evidence`) — Aggregates Burp data, screenshots, and operator notes into a structured EngagementSession (JSON).
 
-4. **Export** (`finding_forge.export`) — Formats drafted findings for import into reporting platforms (CSV, JSON, Markdown, Cervantes CSV).
+4. **Template Library** (`finding_forge.templates`) — Loads, lists, and matches finding templates from bundled Markdown files with YAML frontmatter. Templates are packaged inside the wheel at `finding_forge/templates/findings/` and resolved via `importlib.resources`. Custom template directories can override via `FINDING_FORGE_TEMPLATES_DIR` env var or `create_server(templates_dir=...)`.
+
+5. **Export** (`finding_forge.export`) — Formats drafted findings for import into reporting platforms (CSV, JSON, Markdown, Cervantes CSV).
 
 > **Note on Cervantes export:** Cervantes' CSV import functionality is unreliable — parsing can fail silently or reject valid rows depending on version and database state. The `cervantes` export format is provided as a convenience but results may vary. Always verify imported findings in Cervantes after upload.
 
-5. **MCP Server** (`finding_forge.server`) — Exposes all of the above as MCP tools, resources, and prompts. The `draft_finding` prompt replaces direct AI integration — the client's model executes the drafting.
+6. **MCP Server** (`finding_forge.server`) — Exposes all of the above as MCP tools, resources, and prompts. The `draft_finding` prompt replaces direct AI integration — the client's model executes the drafting.
 
 ## MCP Tools
 
 - `extract_burp` — Parse Burp XML export, filter to target scope
+- `extract_nmap` — Parse nmap XML output, filter to target scope
 - `capture_evidence` — Create an engagement session with evidence
 - `list_finding_templates` — List all available templates
 - `get_finding_template` — Get a specific template by name
