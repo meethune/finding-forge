@@ -1,12 +1,30 @@
 # Changelog
 
-## Unreleased
+## 1.1.2 (2026-06-04)
 
 ### Added
 
 - `extract_nmap` MCP tool — parses nmap XML output via `python-libnmap`, returns per-service results with host, port, protocol, state, service name, version banner, OS match, and NSE script output, filtered to target scope
 - `NmapService` and `NmapScriptResult` Pydantic models for structured nmap data
 - `python-libnmap>=0.7` dependency (uses `defusedxml` internally)
+
+### Security
+
+- **Workspace path confinement** — `extract_burp` and `extract_nmap` now resolve caller-supplied paths and reject anything outside the workspace root via `Path.relative_to()`. Workspace root is read from `FINDING_FORGE_WORKSPACE` env var, falling back to CWD. Prevents arbitrary filesystem reads by a malicious or misconfigured MCP client.
+
+### Fixed
+
+- `validate_finding` exception handler narrowed from bare `except Exception` to `except pydantic.ValidationError` — internal server errors now propagate as `ToolError` instead of being silently returned as validation messages
+- CVSS accessor calls (`c.scores()`, `c.severities()`) moved inside the `try` block; empty-list result now raises a clean `ValueError` instead of an unguarded `IndexError`
+- `type: ignore` suppressions removed from `load_template` — `cwe_ids` and `tags` YAML fields are now coerced via explicit `isinstance(raw, list)` guards, defending against bare-string YAML values
+- `scripts/import_templates.py` no longer hard-codes a checkout-relative CSV path; accepts the CSV path as `sys.argv[1]`
+
+### Tests
+
+- 258 tests (245 → 258); overall coverage 96% → 98%
+- `cli.py` brought to 100% coverage — `--burp-xml` ingestion branch now exercised
+- `server.py` coverage 93% → 97% — `template_resource` return path and `draft_finding` `FileNotFoundError` branch now covered
+- New workspace boundary tests: `TestResolveWorkspacePath` (5), `TestExtractBurpToolWorkspaceBoundary` (2), `TestExtractNmapToolWorkspaceBoundary` (1), `TestValidateFindingToolErrorHandling` (2)
 
 ## 1.1.1 (2026-06-03)
 

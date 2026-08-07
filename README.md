@@ -48,9 +48,16 @@ Once registered, the AI client has access to tools for Burp extraction, nmap par
 - **`/forge`** — zero-input automation. The operator navigates to an artifacts directory and types `/forge`. The AI scans for Burp XML exports, nmap scan output, screenshots, and operator notes, then extracts evidence, matches templates, drafts findings, validates, and exports — all without manual tool chaining.
 - **`/draft_finding`** — focused single-finding drafting from an evidence summary and optional template name.
 
-### Custom templates directory
+### Environment variables
 
-By default the server uses bundled templates packaged inside the wheel. To point at your own templates, set the `FINDING_FORGE_TEMPLATES_DIR` environment variable when registering:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FINDING_FORGE_TEMPLATES_DIR` | bundled templates | Override the finding template library directory |
+| `FINDING_FORGE_WORKSPACE` | current working directory | Workspace root for `extract_burp` and `extract_nmap` path confinement — paths outside this root are rejected |
+
+**Custom templates directory**
+
+By default the server uses the 78 templates bundled inside the wheel. To use your own:
 
 ```bash
 # IBM Bob
@@ -61,6 +68,22 @@ bob mcp add --scope user finding-forge \
 # Claude Code
 claude mcp add --scope user finding-forge \
   --env FINDING_FORGE_TEMPLATES_DIR=/path/to/my/templates -- \
+  uv run --project /path/to/finding-forge finding-forge-mcp
+```
+
+**Workspace confinement**
+
+`extract_burp` and `extract_nmap` reject any file path outside `FINDING_FORGE_WORKSPACE`. Set this when the server will receive paths from an untrusted or shared MCP client:
+
+```bash
+# IBM Bob
+bob mcp add --scope user finding-forge \
+  FINDING_FORGE_WORKSPACE=/home/operator/engagements \
+  uv run --project /path/to/finding-forge finding-forge-mcp
+
+# Claude Code
+claude mcp add --scope user finding-forge \
+  --env FINDING_FORGE_WORKSPACE=/home/operator/engagements -- \
   uv run --project /path/to/finding-forge finding-forge-mcp
 ```
 
