@@ -630,3 +630,51 @@ class TestExtractNmapToolWorkspaceBoundary:
                     "extract_nmap",
                     {"xml_path": str(nmap_xml), "target_hosts": ["10.0.0.1"]},
                 )
+
+
+class TestValidateFindingToolErrorHandling:
+    """validate_finding must distinguish schema errors from internal exceptions."""
+
+    async def test_invalid_json_returns_validation_error_string(
+        self, templates_dir: Path
+    ) -> None:
+        server = create_server(templates_dir)
+        result = await server.call_tool(
+            "validate_finding", {"finding_json": '{"title": "Missing required fields"}'}
+        )
+        content, _is_error = result
+        text = content[0].text  # type: ignore[union-attr]
+        assert "Validation errors" in text
+
+    async def test_internal_exception_is_not_swallowed(
+        self, templates_dir: Path
+    ) -> None:
+        """A non-ValidationError exception must propagate, not be returned as a
+        'Validation errors' string.  We simulate it by patching model_validate_json
+        to raise a RuntimeError."""
+        from unittest.mock import patch as _patch
+
+        from finding_forge import models
+
+        server = create_server(templates_dir)
+        valid_json = json.dumps(
+            {
+                "title": "T",
+                "description": "D",
+                "severity": {"rating": "Low"},
+                "impact": "I",
+                "mitigation": "M",
+                "replication_steps": "R",
+            }
+        )
+        with (
+            _patch.object(
+                models.schemas.Finding,
+                "model_validate_json",
+                side_effect=RuntimeError("simulated internal error"),
+            ),
+            pytest.raises((RuntimeError, ToolError)),
+        ):
+            await server.call_tool(
+                "validate_finding", {"finding_json": valid_json}
+            )

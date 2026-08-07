@@ -9,7 +9,7 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts.base import Message, UserMessage
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from finding_forge.burp.extract import extract_burp_data
 from finding_forge.cvss.calculator import (
@@ -255,7 +255,7 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
         """
         try:
             Finding.model_validate_json(finding_json)
-        except Exception as e:
+        except ValidationError as e:
             return f"Validation errors:\n{e}"
         return "valid"
 
