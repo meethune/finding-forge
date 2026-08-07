@@ -195,14 +195,16 @@ class TestExtractBurpTool:
     async def test_extracts_burp_data(
         self, templates_dir: Path, burp_xml: Path
     ) -> None:
-        server = create_server(templates_dir)
-        result = await server.call_tool(
-            "extract_burp",
-            {
-                "xml_path": str(burp_xml),
-                "target_hosts": ["app.example.com"],
-            },
-        )
+        workspace = burp_xml.parent
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(workspace)}):
+            server = create_server(templates_dir)
+            result = await server.call_tool(
+                "extract_burp",
+                {
+                    "xml_path": str(burp_xml),
+                    "target_hosts": ["app.example.com"],
+                },
+            )
         content, _is_error = result
         assert len(content) > 0
         text = content[0].text  # type: ignore[union-attr]
@@ -238,14 +240,15 @@ class TestExtractNmapTool:
             "</runstats>\n"
             "</nmaprun>\n"
         )
-        server = create_server(templates_dir)
-        result = await server.call_tool(
-            "extract_nmap",
-            {
-                "xml_path": str(nmap_xml),
-                "target_hosts": ["10.0.0.1"],
-            },
-        )
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(tmp_path)}):
+            server = create_server(templates_dir)
+            result = await server.call_tool(
+                "extract_nmap",
+                {
+                    "xml_path": str(nmap_xml),
+                    "target_hosts": ["10.0.0.1"],
+                },
+            )
         content, _is_error = result
         text = content[0].text  # type: ignore[index,union-attr]
         data = json.loads(text)
@@ -505,3 +508,125 @@ class TestServerInstructions:
             assert term not in instructions, (
                 f"instructions contain provider-specific term: {term}"
             )
+
+
+class TestResolveWorkspacePath:
+    """Unit tests for _resolve_workspace_path path-confinement helper."""
+
+    def test_path_inside_workspace_is_accepted(self, tmp_path: Path) -> None:
+        from finding_forge.server import _resolve_workspace_path
+
+        target = tmp_path / "scan.xml"
+        target.touch()
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(tmp_path)}):
+            result = _resolve_workspace_path(str(target))
+        assert result == target.resolve()
+
+    def test_path_outside_workspace_raises(self, tmp_path: Path) -> None:
+        from finding_forge.server import _resolve_workspace_path
+
+        outside = tmp_path.parent / "other_dir" / "evil.xml"
+        with (
+            patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(tmp_path)}),
+            pytest.raises(ValueError, match="outside the workspace root"),
+        ):
+            _resolve_workspace_path(str(outside))
+
+    def test_dotdot_traversal_is_rejected(self, tmp_path: Path) -> None:
+        from finding_forge.server import _resolve_workspace_path
+
+        traversal = str(tmp_path / ".." / "escape.xml")
+        with (
+            patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(tmp_path)}),
+            pytest.raises(ValueError, match="outside the workspace root"),
+        ):
+            _resolve_workspace_path(traversal)
+
+    def test_workspace_env_var_takes_precedence_over_cwd(self, tmp_path: Path) -> None:
+        from finding_forge.server import _resolve_workspace_path
+
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        target = workspace / "burp.xml"
+        target.touch()
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(workspace)}):
+            result = _resolve_workspace_path(str(target))
+        assert result == target.resolve()
+
+    def test_empty_env_var_falls_back_to_cwd(self, tmp_path: Path) -> None:
+        """Empty FINDING_FORGE_WORKSPACE should use CWD, not an empty path."""
+        import os as _os
+
+        from finding_forge.server import _resolve_workspace_path
+
+        cwd = Path(_os.getcwd()).resolve()
+        target = cwd / "pyproject.toml"
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": ""}):
+            result = _resolve_workspace_path(str(target))
+        assert result == target.resolve()
+
+
+class TestExtractBurpToolWorkspaceBoundary:
+    """extract_burp tool must reject paths outside the workspace."""
+
+    async def test_accepts_path_inside_workspace(
+        self, templates_dir: Path, burp_xml: Path
+    ) -> None:
+        workspace = burp_xml.parent
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(workspace)}):
+            server = create_server(templates_dir)
+            result = await server.call_tool(
+                "extract_burp",
+                {"xml_path": str(burp_xml), "target_hosts": ["app.example.com"]},
+            )
+        content, _is_error = result
+        data = json.loads(content[0].text)  # type: ignore[union-attr]
+        assert data[0]["host"] == "app.example.com"
+
+    async def test_rejects_path_outside_workspace(
+        self, templates_dir: Path, burp_xml: Path, tmp_path: Path
+    ) -> None:
+        other_workspace = tmp_path / "other"
+        other_workspace.mkdir()
+        with patch.dict(
+            os.environ, {"FINDING_FORGE_WORKSPACE": str(other_workspace)}
+        ):
+            server = create_server(templates_dir)
+            with pytest.raises((ValueError, ToolError)):
+                await server.call_tool(
+                    "extract_burp",
+                    {
+                        "xml_path": str(burp_xml),
+                        "target_hosts": ["app.example.com"],
+                    },
+                )
+
+
+class TestExtractNmapToolWorkspaceBoundary:
+    """extract_nmap tool must reject paths outside the workspace."""
+
+    async def test_rejects_path_outside_workspace(
+        self, templates_dir: Path, tmp_path: Path
+    ) -> None:
+        nmap_xml = tmp_path / "scan.xml"
+        nmap_xml.write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<nmaprun scanner="nmap" args="" start="0" startstr="" '
+            'version="7.94" xmloutputversion="1.05">'
+            "<runstats>"
+            '<finished time="0" elapsed="0"/>'
+            '<hosts up="0" down="0" total="0"/>'
+            "</runstats>"
+            "</nmaprun>"
+        )
+        other_workspace = tmp_path / "other"
+        other_workspace.mkdir()
+        with patch.dict(
+            os.environ, {"FINDING_FORGE_WORKSPACE": str(other_workspace)}
+        ):
+            server = create_server(templates_dir)
+            with pytest.raises((ValueError, ToolError)):
+                await server.call_tool(
+                    "extract_nmap",
+                    {"xml_path": str(nmap_xml), "target_hosts": ["10.0.0.1"]},
+                )

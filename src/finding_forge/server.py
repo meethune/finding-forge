@@ -53,6 +53,30 @@ def _resolve_templates_dir(override: Path | None = None) -> Path:
     return _BUNDLED_TEMPLATES_DIR
 
 
+def _resolve_workspace_path(xml_path: str) -> Path:
+    """Resolve *xml_path* and verify it stays within the workspace root.
+
+    The workspace root is, in order of precedence:
+      1. ``FINDING_FORGE_WORKSPACE`` environment variable (must be non-empty)
+      2. The current working directory
+
+    Raises ``ValueError`` if the resolved path escapes the workspace root.
+    """
+    env_ws = os.environ.get("FINDING_FORGE_WORKSPACE", "")
+    workspace = Path(env_ws).resolve() if env_ws else Path.cwd().resolve()
+
+    target = Path(xml_path).resolve()
+    try:
+        target.relative_to(workspace)
+    except ValueError as exc:
+        msg = (
+            f"Path {xml_path!r} is outside the workspace root {workspace}. "
+            "Set FINDING_FORGE_WORKSPACE to override the workspace boundary."
+        )
+        raise ValueError(msg) from exc
+    return target
+
+
 def create_server(templates_dir: Path | None = None) -> FastMCP:
     """Create and configure the MCP server instance."""
     resolved_dir = _resolve_templates_dir(templates_dir)
@@ -103,13 +127,15 @@ def create_server(templates_dir: Path | None = None) -> FastMCP:
     @server.tool()
     def extract_burp(xml_path: str, target_hosts: list[str]) -> str:
         """Parse Burp XML export, filter to target scope."""
-        results = extract_burp_data(Path(xml_path), target_hosts)
+        resolved = _resolve_workspace_path(xml_path)
+        results = extract_burp_data(resolved, target_hosts)
         return _dump_models(results)
 
     @server.tool()
     def extract_nmap(xml_path: str, target_hosts: list[str]) -> str:
         """Parse nmap XML output, filter to target scope."""
-        results = extract_nmap_data(Path(xml_path), target_hosts)
+        resolved = _resolve_workspace_path(xml_path)
+        results = extract_nmap_data(resolved, target_hosts)
         return _dump_models(results)
 
     @server.tool()
