@@ -63,6 +63,11 @@ def load_template(template_path: Path) -> FindingTemplate:
     if not isinstance(severity_data, dict):
         severity_data = {"rating": str(severity_data)}
 
+    raw_cwe = meta.get("cwe_ids")
+    cwe_ids = [str(c) for c in raw_cwe] if isinstance(raw_cwe, list) else []
+    raw_tags = meta.get("tags")
+    tags = [str(t) for t in raw_tags] if isinstance(raw_tags, list) else []
+
     return FindingTemplate(
         name=template_path.stem,
         title=str(meta.get("title", template_path.stem)),
@@ -73,8 +78,8 @@ def load_template(template_path: Path) -> FindingTemplate:
         replication_steps=sections.get("replication steps", ""),
         references=_extract_references(sections.get("references", "")),
         detection=sections.get("detection", ""),
-        cwe_ids=meta.get("cwe_ids", []),  # type: ignore[arg-type]
-        tags=meta.get("tags", []),  # type: ignore[arg-type]
+        cwe_ids=cwe_ids,
+        tags=tags,
         finding_type=str(meta.get("finding_type", "")),
         guidance=sections.get("guidance", ""),
     )

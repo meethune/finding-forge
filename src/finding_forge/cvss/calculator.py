@@ -35,11 +35,18 @@ def score_from_vector(vector: str) -> CvssResult:
     """Compute CVSS score and rating from a vector string."""
     try:
         c = CVSS3(vector)
+        scores = c.scores()
+        severities = c.severities()
+        if not scores or not severities:
+            msg = f"CVSS library returned no scores for vector: {vector}"
+            raise ValueError(msg)
+        base_score = scores[0]
+        rating = severities[0]
+    except ValueError:
+        raise
     except Exception as e:
         msg = f"Invalid CVSS vector: {vector}"
         raise ValueError(msg) from e
-    base_score = c.scores()[0]
-    rating = c.severities()[0]
     return CvssResult(
         vector=c.clean_vector(),
         score=base_score,

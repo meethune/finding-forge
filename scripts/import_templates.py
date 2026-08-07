@@ -7,12 +7,6 @@ import sys
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CSV_PATH = (
-    _PROJECT_ROOT.parent.parent
-    / "template-generator"
-    / "data"
-    / "ghostwriter-findings-library-import.csv"
-)
 OUTPUT_DIR = _PROJECT_ROOT / "src" / "finding_forge" / "templates" / "findings"
 
 
@@ -123,6 +117,10 @@ def _build_template(row: dict[str, str], slug: str) -> str:
 
 
 def main() -> None:
+    if len(sys.argv) < 2:
+        print("Usage: import_templates.py <path/to/findings.csv>", file=sys.stderr)
+        sys.exit(1)
+    CSV_PATH = Path(sys.argv[1])
     if not CSV_PATH.exists():
         print(f"CSV not found: {CSV_PATH}", file=sys.stderr)
         sys.exit(1)

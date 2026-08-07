@@ -117,3 +117,46 @@ class TestExportCommand:
         assert result.exit_code == 0
         assert output.exists()
         assert "# Test Finding" in output.read_text()
+
+
+class TestCaptureBurpXmlBranch:
+    def test_capture_with_burp_xml_extracts_requests(
+        self, tmp_path: Path
+    ) -> None:
+        burp_file = tmp_path / "burp.xml"
+        burp_file.write_text(
+            '<?xml version="1.0"?>\n'
+            '<items burpVersion="2024.0.0">\n'
+            "  <item>\n"
+            "    <url><![CDATA[https://app.example.com/login]]></url>\n"
+            "    <host>app.example.com</host>\n"
+            "    <port>443</port>\n"
+            "    <protocol>https</protocol>\n"
+            "    <method><![CDATA[POST]]></method>\n"
+            "    <path><![CDATA[/login]]></path>\n"
+            '    <request base64="false"><![CDATA[POST /login HTTP/1.1\r\n'
+            "Host: app.example.com\r\n\r\nuser=admin]]></request>\n"
+            "    <status>200</status>\n"
+            '    <response base64="false"><![CDATA[HTTP/1.1 200 OK\r\n'
+            "Content-Type: text/html\r\n\r\nOK]]></response>\n"
+            "  </item>\n"
+            "</items>\n"
+        )
+        output = tmp_path / "evidence.json"
+        runner = CliRunner()
+        result = runner.invoke(
+            forge,
+            [
+                "capture",
+                "--target", "https://app.example.com",
+                "--engagement", "ENG-002",
+                "--burp-xml", str(burp_file),
+                "--output", str(output),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert "Extracted 1 requests from Burp export." in result.output
+        assert output.exists()
+        data = json.loads(output.read_text())
+        assert len(data["evidence"]) == 1
+        assert data["evidence"][0]["evidence_type"] == "burp-export"

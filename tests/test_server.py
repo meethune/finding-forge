@@ -190,6 +190,17 @@ class TestServerResourcesRegistered:
         uris = {str(rt.uriTemplate) for rt in resource_templates}
         assert any("templates://findings/" in u for u in uris)
 
+    async def test_template_resource_returns_json(
+        self, templates_dir: Path
+    ) -> None:
+        server = create_server(templates_dir)
+        result = await server.read_resource("templates://findings/sqli")
+        assert result
+        text = result[0].content  # type: ignore[union-attr]
+        data = json.loads(text)
+        assert data["name"] == "sqli"
+        assert "SQL Injection" in data["title"]
+
 
 class TestExtractBurpTool:
     async def test_extracts_burp_data(
@@ -420,6 +431,21 @@ class TestDraftFindingPrompt:
             "draft_finding",
             {"evidence_summary": "Found a vulnerability"},
         )
+        assert len(result.messages) > 0
+
+    async def test_missing_template_name_falls_back_gracefully(
+        self, templates_dir: Path
+    ) -> None:
+        server = create_server(templates_dir)
+        result = await server.get_prompt(
+            "draft_finding",
+            {
+                "evidence_summary": "XSS in search param",
+                "template_name": "nonexistent-template",
+            },
+        )
+        all_text = " ".join(str(m.content) for m in result.messages)
+        assert "not found" in all_text.lower()
         assert len(result.messages) > 0
 
     async def test_output_schema_includes_evidence(self, templates_dir: Path) -> None:
