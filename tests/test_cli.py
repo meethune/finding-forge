@@ -120,9 +120,7 @@ class TestExportCommand:
 
 
 class TestCaptureBurpXmlBranch:
-    def test_capture_with_burp_xml_extracts_requests(
-        self, tmp_path: Path
-    ) -> None:
+    def test_capture_with_burp_xml_extracts_requests(self, tmp_path: Path) -> None:
         burp_file = tmp_path / "burp.xml"
         burp_file.write_text(
             '<?xml version="1.0"?>\n'
@@ -148,10 +146,14 @@ class TestCaptureBurpXmlBranch:
             forge,
             [
                 "capture",
-                "--target", "https://app.example.com",
-                "--engagement", "ENG-002",
-                "--burp-xml", str(burp_file),
-                "--output", str(output),
+                "--target",
+                "https://app.example.com",
+                "--engagement",
+                "ENG-002",
+                "--burp-xml",
+                str(burp_file),
+                "--output",
+                str(output),
             ],
         )
         assert result.exit_code == 0, result.output

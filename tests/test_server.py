@@ -190,9 +190,7 @@ class TestServerResourcesRegistered:
         uris = {str(rt.uriTemplate) for rt in resource_templates}
         assert any("templates://findings/" in u for u in uris)
 
-    async def test_template_resource_returns_json(
-        self, templates_dir: Path
-    ) -> None:
+    async def test_template_resource_returns_json(self, templates_dir: Path) -> None:
         server = create_server(templates_dir)
         result = await server.read_resource("templates://findings/sqli")
         assert result
@@ -614,9 +612,7 @@ class TestExtractBurpToolWorkspaceBoundary:
     ) -> None:
         other_workspace = tmp_path / "other"
         other_workspace.mkdir()
-        with patch.dict(
-            os.environ, {"FINDING_FORGE_WORKSPACE": str(other_workspace)}
-        ):
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(other_workspace)}):
             server = create_server(templates_dir)
             with pytest.raises((ValueError, ToolError)):
                 await server.call_tool(
@@ -647,9 +643,7 @@ class TestExtractNmapToolWorkspaceBoundary:
         )
         other_workspace = tmp_path / "other"
         other_workspace.mkdir()
-        with patch.dict(
-            os.environ, {"FINDING_FORGE_WORKSPACE": str(other_workspace)}
-        ):
+        with patch.dict(os.environ, {"FINDING_FORGE_WORKSPACE": str(other_workspace)}):
             server = create_server(templates_dir)
             with pytest.raises((ValueError, ToolError)):
                 await server.call_tool(
@@ -701,6 +695,4 @@ class TestValidateFindingToolErrorHandling:
             ),
             pytest.raises((RuntimeError, ToolError)),
         ):
-            await server.call_tool(
-                "validate_finding", {"finding_json": valid_json}
-            )
+            await server.call_tool("validate_finding", {"finding_json": valid_json})
