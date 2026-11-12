@@ -119,7 +119,23 @@ uv run ruff check src/ tests/
 uv run ruff format src/ tests/
 uv run mypy src/
 uv run pytest
+uv lock --check
+uv pip check
+uv build
 ```
+
+MCP stays on the supported 1.x API (`>=1.30.0,<2`). After updating dependencies,
+audit both production and development packages from the lockfile:
+
+```bash
+uv export --locked --all-groups --no-emit-project --no-hashes --output-file /tmp/finding-forge-requirements.txt
+uvx pip-audit --requirement /tmp/finding-forge-requirements.txt --no-deps --disable-pip
+```
+
+The test suite uses synthetic evidence and XML fixtures; it does not run scans
+against remote targets. It covers MCP tools, Burp/Nmap imports, workspace path
+confinement, and JSON, CSV, Markdown, and Cervantes exports. Advisory results
+reflect the database at audit time and should be checked again after updates.
 
 ## Architecture
 
