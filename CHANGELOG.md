@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.3 (2026-11-12)
+
+### Security
+
+- Require MCP `>=1.30.0,<2`, retaining the 1.x API and locking MCP to 1.30.0.
+- Refresh production and development dependencies to address known advisories
+  in AnyIO, certifi, cryptography, MCP, pydantic-settings, PyJWT,
+  python-multipart, and Starlette.
+
+### Documentation
+
+- Document dependency audits, lockfile and environment checks, and package builds.
+
 ## 1.1.2 (2026-06-04)
 
 ### Added
